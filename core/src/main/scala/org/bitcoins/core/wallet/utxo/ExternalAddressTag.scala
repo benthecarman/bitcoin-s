@@ -16,4 +16,8 @@ trait ExternalAddressTagType extends AddressTagType
   * Address Tags defined outside the library, used for other projects
   * creating there own address tags that aren't supported by bitcoin-s
   */
-trait ExternalAddressTag extends AddressTag
+trait ExternalAddressTag extends AddressTag {
+  override def tagName: ExternalAddressTagName
+
+  override def tagType: AddressTagType
+}

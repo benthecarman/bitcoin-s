@@ -22,33 +22,62 @@ sealed trait InternalAddressTagType extends AddressTagType
 sealed trait InternalAddressTag extends AddressTag
 
 /** An unknown address tag name, most likely an internal representation of an [[ExternalAddressTagName]] */
-case class UnknownAddressTagName(name: String) extends InternalAddressTagName {
+case class UnknownAddressTagName(name: String) extends ExternalAddressTagName {
   require(InternalAddressTagName.fromStringOpt(name).isEmpty,
           s"This tag name is already defined, got $name")
 }
 
+object UnknownAddressTagName {
+  def fromString(name: String): UnknownAddressTagName = {
+    UnknownAddressTagName(name)
+  }
+}
+
+
 /** An unknown address tag type, most likely an internal representation of an [[ExternalAddressTagType]] */
 case class UnknownAddressTagType(typeName: String)
-    extends InternalAddressTagType {
+    extends ExternalAddressTagType {
   require(InternalAddressTagType.fromStringOpt(typeName).isEmpty,
           s"This tag type is already defined, got $typeName")
 }
 
+object UnknownAddressTagType {
+  def fromString(name: String): UnknownAddressTagType = {
+    UnknownAddressTagType(name)
+  }
+}
+
+
 /** An address tag without an unknown type, most likely an internal representation of an [[ExternalAddressTag]] */
-case class UnknownAddressTag(tagName: AddressTagName, tagType: AddressTagType)
-    extends InternalAddressTag
+case class ExternalAddressTagWrapper(external: ExternalAddressTag)
+  extends InternalAddressTag {
+  override val tagName: AddressTagName = external.tagName
+  override val tagType: AddressTagType = external.tagType
+}
 
-object UnknownAddressTag {
+object ExternalAddressTagWrapper {
 
-  def apply(tagName: String, tagType: String): UnknownAddressTag =
-    UnknownAddressTag(UnknownAddressTagName(tagName),
-                      UnknownAddressTagType(tagType))
+  def apply(tagName: ExternalAddressTagName, tagType: ExternalAddressTagType): ExternalAddressTagWrapper = {
+    val name = tagName
+    val tt = tagType
+    val anonExternal = new ExternalAddressTag {
+      override def tagName: ExternalAddressTagName = name
+      override def tagType: ExternalAddressTagType = tt
+    }
+    ExternalAddressTagWrapper(anonExternal)
+  }
 
-  def apply(tagName: String, tagType: AddressTagType): UnknownAddressTag =
-    UnknownAddressTag(UnknownAddressTagName(tagName), tagType)
+  def apply(tagName: String, tagType: ExternalAddressTagType): ExternalAddressTagWrapper = {
+    ExternalAddressTagWrapper(UnknownAddressTagName(tagName), tagType)
+  }
 
-  def apply(tagName: AddressTagName, tagType: String): UnknownAddressTag =
-    UnknownAddressTag(tagName, UnknownAddressTagType(tagType))
+  def apply(tagName: ExternalAddressTagName, tagType: String): ExternalAddressTagWrapper = {
+    ExternalAddressTagWrapper(tagName, UnknownAddressTagType(tagType))
+  }
+
+  def apply(tagName: String, tagType: String): ExternalAddressTagWrapper = {
+    ExternalAddressTagWrapper(UnknownAddressTagName(tagName), UnknownAddressTagType(tagType))
+  }
 }
 
 object InternalAddressTagName {
@@ -59,7 +88,11 @@ object InternalAddressTagName {
     all.find(_.name.toLowerCase == string.toLowerCase)
 
   def fromString(string: String): InternalAddressTagName =
-    fromStringOpt(string).getOrElse(UnknownAddressTagName(string))
+    fromStringOpt(string) match {
+      case Some(t) => t
+      case None =>
+        sys.error(s"Unknown internal tag name for string=$string")
+    }
 }
 
 object InternalAddressTagType {
@@ -69,17 +102,19 @@ object InternalAddressTagType {
     all.find(_.typeName.toLowerCase == string.toLowerCase)
 
   def fromString(string: String): InternalAddressTagType =
-    fromStringOpt(string).getOrElse(UnknownAddressTagType(string))
+    fromStringOpt(string) match {
+      case Some(t) => t
+      case None =>
+        sys.error(s"Unknown internal tag type for string=$string")
+    }
 }
 
 object InternalAddressTag {
 
   def apply(
-      tagName: AddressTagName,
-      tagType: AddressTagType): InternalAddressTag = {
+      tagName: InternalAddressTagName,
+      tagType: InternalAddressTagType): InternalAddressTag = {
     tagType match {
-      case unknownType: UnknownAddressTagType =>
-        UnknownAddressTag(tagName, unknownType)
       case StorageLocationTagType =>
         tagName match {
           case StorageLocationTag.HotStorageName =>
@@ -88,14 +123,12 @@ object InternalAddressTag {
             StorageLocationTag.ColdStorage
           case StorageLocationTag.DeepColdStorageName =>
             StorageLocationTag.DeepColdStorage
-          case unknownName: UnknownAddressTagName =>
-            UnknownAddressTag(unknownName, StorageLocationTagType)
         }
     }
   }
 }
 
-object StorageLocationTagType extends InternalAddressTagType {
+case object StorageLocationTagType extends InternalAddressTagType {
   override val typeName: String = "StorageLocationTag"
 }
 

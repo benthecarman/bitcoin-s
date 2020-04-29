@@ -3,12 +3,7 @@ package org.bitcoins.wallet.models
 import java.sql.SQLException
 
 import org.bitcoins.core.wallet.utxo.StorageLocationTag.HotStorage
-import org.bitcoins.core.wallet.utxo.{
-  AddressTag,
-  UnknownAddressTag,
-  UnknownAddressTagName,
-  UnknownAddressTagType
-}
+import org.bitcoins.core.wallet.utxo.{AddressTag, ExternalAddressTagWrapper, UnknownAddressTagName, UnknownAddressTagType}
 import org.bitcoins.testkit.fixtures.WalletDAOFixture
 import org.bitcoins.testkit.util.TestUtil
 import org.bitcoins.testkit.wallet.{BitcoinSWalletTest, WalletTestUtil}
@@ -20,8 +15,8 @@ class AddressTagDAOTest extends BitcoinSWalletTest with WalletDAOFixture {
 
   behavior of "AddressTagDAO"
 
-  val exampleTag: UnknownAddressTag =
-    UnknownAddressTag(UnknownAddressTagName("Example"),
+  val exampleTag: ExternalAddressTagWrapper =
+    ExternalAddressTagWrapper(UnknownAddressTagName("Example"),
                       UnknownAddressTagType("ExampleTagType"))
 
   def testInsertionFailure(

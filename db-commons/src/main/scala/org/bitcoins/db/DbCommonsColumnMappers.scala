@@ -178,15 +178,33 @@ abstract class DbCommonsColumnMappers {
       .base[SatoshisPerByte, Long](_.toLong, SatoshisPerByte.fromLong)
   }
 
+
+
   implicit val addressTagMapper: BaseColumnType[AddressTagName] = {
     MappedColumnType
-      .base[AddressTagName, String](_.name, InternalAddressTagName.fromString)
+      .base[AddressTagName, String](_.name, { str =>
+        val internalOpt = InternalAddressTagName.fromStringOpt(str)
+        internalOpt match {
+          case Some(i) => i
+          case None =>
+            //if it's not a internal tag it must be an external tag
+            UnknownAddressTagName.fromString(str)
+        }
+      })
   }
 
   implicit val addressTagTypeMapper: BaseColumnType[AddressTagType] = {
     MappedColumnType
       .base[AddressTagType, String](_.typeName,
-                                    InternalAddressTagType.fromString)
+        { str =>
+          val internalOpt = InternalAddressTagType.fromStringOpt(str)
+          internalOpt match {
+            case Some(i) => i
+            case None =>
+              //if it's not a internal tag it must be an external tag
+              UnknownAddressTagType.fromString(str)
+          }
+        })
   }
 }
 

@@ -235,8 +235,8 @@ class FundTransactionHandlingTest extends BitcoinSWalletTest {
   it must "fund a transaction with only utxos with an unknown address tag" in {
     fundedWallet: WalletWithBitcoind =>
       val wallet = fundedWallet.wallet
-      val exampleTag: UnknownAddressTag =
-        UnknownAddressTag("Example", "ExampleTagType")
+      val exampleTag: ExternalAddressTagWrapper =
+        ExternalAddressTagWrapper("Example", "ExampleTagType")
 
       testAddressTagFunding(wallet, exampleTag)
   }
