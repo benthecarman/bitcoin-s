@@ -123,7 +123,7 @@ class AddressTagDAOTest extends BitcoinSWalletTest with WalletDAOFixture {
     }
   }
 
-  it must "convert an external tag into an wrapped tag" in {
+  it must "convert an external tag into an wrapped tag" in { _ =>
     val tag = ExternalExampleTag.ExampleA
 
     val wrapped = ExternalAddressTagWrapper(tag)
