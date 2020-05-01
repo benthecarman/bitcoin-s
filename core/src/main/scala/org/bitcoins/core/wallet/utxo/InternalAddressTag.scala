@@ -53,6 +53,11 @@ case class ExternalAddressTagWrapper(external: ExternalAddressTag)
   extends InternalAddressTag {
   override val tagName: AddressTagName = external.tagName
   override val tagType: AddressTagType = external.tagType
+
+  def toExternal[T <: ExternalAddressTag](addressTagFactory: AddressTagFactory[T]): T = {
+    addressTagFactory.fromString(name = tagName.name,
+      typeName = tagType.typeName)
+  }
 }
 
 object ExternalAddressTagWrapper {

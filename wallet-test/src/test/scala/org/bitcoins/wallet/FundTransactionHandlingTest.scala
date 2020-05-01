@@ -8,6 +8,7 @@ import org.bitcoins.core.wallet.utxo._
 import org.bitcoins.testkit.util.TestUtil
 import org.bitcoins.testkit.wallet.BitcoinSWalletTest.WalletWithBitcoind
 import org.bitcoins.testkit.wallet.{BitcoinSWalletTest, WalletTestUtil}
+import org.bitcoins.wallet.models.ExternalExampleTag
 import org.scalatest.{Assertion, FutureOutcome}
 
 import scala.concurrent.Future
@@ -247,4 +248,12 @@ class FundTransactionHandlingTest extends BitcoinSWalletTest {
 
       testAddressTagFunding(wallet, HotStorage)
   }
+
+  it must "fund a transaction with utxos with an external address tag" in {
+    fundedWallet: WalletWithBitcoind =>
+      val wallet = fundedWallet.wallet
+
+      testAddressTagFunding(wallet, ExternalExampleTag.ExampleA)
+  }
+
 }

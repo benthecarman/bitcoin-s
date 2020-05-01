@@ -38,6 +38,32 @@ trait AddressTagFactory[Tag <: AddressTag] {
 
   def all: Vector[Tag]
 
-  def fromString(str: String): Option[Tag] =
-    all.find(tag => str.toLowerCase() == tag.toString.toLowerCase)
+  def fromStringOpt(name: String, typeName: String): Option[Tag] = {
+    if (typeName == tagType.typeName) {
+      fromStringOpt(name)
+    } else {
+      None
+    }
+  }
+
+  def fromString(name: String, typeName: String): Tag = {
+    fromStringOpt(name, typeName) match {
+      case Some(tag) => tag
+      case None =>
+        throw new IllegalArgumentException(
+          s"$name and $typeName do not correspond to a valid $tagType")
+    }
+  }
+
+  def fromStringOpt(name: String): Option[Tag] =
+    all.find(tag => name == tag.tagName.name)
+
+  def fromString(name: String): Tag = {
+    fromStringOpt(name) match {
+      case Some(tag) => tag
+      case None =>
+        throw new IllegalArgumentException(
+          s"$name do not correspond to a valid $tagType")
+    }
+  }
 }
