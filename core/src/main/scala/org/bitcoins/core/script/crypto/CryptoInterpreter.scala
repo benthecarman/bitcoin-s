@@ -2,6 +2,8 @@ package org.bitcoins.core.script.crypto
 
 import org.bitcoins.core.consensus.Consensus
 import org.bitcoins.core.crypto._
+import org.bitcoins.core.protocol.script._
+import org.bitcoins.core.script._
 import org.bitcoins.core.script.constant._
 import org.bitcoins.core.script.control.{
   ControlOperationsInterpreter,
@@ -9,7 +11,6 @@ import org.bitcoins.core.script.control.{
 }
 import org.bitcoins.core.script.flag.ScriptFlagUtil
 import org.bitcoins.core.script.result._
-import org.bitcoins.core.script._
 import org.bitcoins.core.util.{BitcoinSLogger, BitcoinScriptUtil}
 import org.bitcoins.crypto.{
   CryptoUtil,
@@ -74,10 +75,13 @@ sealed abstract class CryptoInterpreter {
     * must be a valid signature for this hash and public key.
     * [[https://github.com/bitcoin/bitcoin/blob/528472111b4965b1a99c4bcf08ac5ec93d87f10f/src/script/interpreter.cpp#L880]]
     */
-  def opCheckSig(
+  def opCheckSigPreTapscript(
       program: ExecutionInProgressScriptProgram): StartedScriptProgram = {
     require(program.script.headOption.contains(OP_CHECKSIG),
             "Script top must be OP_CHECKSIG")
+    require(Vector(SigVersionBase, SigVersionWitnessV0).contains(
+              program.txSignatureComponent.sigVersion),
+            "Sig Version must be Base or WitnessV0")
     if (program.stack.size < 2) {
       logger.error("OP_CHECKSIG requires at lest two stack elements")
       program.failExecution(ScriptErrorInvalidStackOperation)
@@ -99,6 +103,66 @@ sealed abstract class CryptoInterpreter {
         signature,
         flags)
       handleSignatureValidation(program, result, restOfStack)
+    }
+  }
+
+  /**
+    * The entire transaction's outputs, inputs, and script (from the most
+    * recently-executed OP_CODESEPARATOR to the end) are hashed.
+    * The signature used by
+    * [[org.bitcoins.core.script.crypto.OP_CHECKSIG OP_CHECKSIG]]
+    * must be a valid signature for this hash and public key.
+    * [[https://github.com/bitcoin/bitcoin/blob/528472111b4965b1a99c4bcf08ac5ec93d87f10f/src/script/interpreter.cpp#L880]]
+    */
+  def opCheckSigTapscript(
+      program: ExecutionInProgressScriptProgram): StartedScriptProgram = {
+    require(program.script.headOption.contains(OP_CHECKSIG),
+            "Script top must be OP_CHECKSIG")
+    require(program.txSignatureComponent.sigVersion == SigVersionTapscript,
+            "Sig Version must be tapscript")
+    if (program.stack.size < 2) {
+      logger.error("OP_CHECKSIG requires at lest two stack elements")
+      program.failExecution(ScriptErrorInvalidStackOperation)
+    } else {
+      val pubKey = ECPublicKey(program.stack.head.bytes)
+
+      if (pubKey.byteSize == 0) {
+        program.failExecution(ScriptErrorWitnessPubKeyType)
+      } else if (pubKey.byteSize == 32) {
+        val signature = ECDigitalSignature(program.stack.tail.head.bytes)
+        val flags = program.flags
+        val restOfStack = program.stack.tail.tail
+        logger.debug(
+          "Program before removing OP_CODESEPARATOR: " + program.originalScript)
+        val removedOpCodeSeparatorsScript =
+          BitcoinScriptUtil.removeOpCodeSeparator(program)
+        logger.debug(
+          "Program after removing OP_CODESEPARATOR: " + removedOpCodeSeparatorsScript)
+        val result = TransactionSignatureChecker.checkSignature(
+          program.txSignatureComponent,
+          removedOpCodeSeparatorsScript,
+          pubKey,
+          signature,
+          flags)
+        handleSignatureValidation(program, result, restOfStack)
+      } else {
+        // If unknown pubkey length, consider it valid
+        program.updateStackAndScript(OP_TRUE +: program.stack.tail.tail,
+                                     program.script.tail)
+      }
+    }
+  }
+
+  def opCheckSig(
+      program: ExecutionInProgressScriptProgram): StartedScriptProgram = {
+    program.txSignatureComponent.sigVersion match {
+      case SigVersionBase | SigVersionWitnessV0 =>
+        opCheckSigPreTapscript(program)
+      case SigVersionTapscript =>
+        opCheckSigTapscript(program)
+      case SigVersionTaproot =>
+        // todo properly handle
+        throw new RuntimeException("")
     }
   }
 

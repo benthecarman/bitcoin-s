@@ -64,6 +64,7 @@ trait TransactionSignatureChecker extends BitcoinSLogger {
       signature: ECDigitalSignature,
       flags: Seq[ScriptFlag] =
         Policy.standardFlags): TransactionSignatureCheckerResult = {
+    // todo verify signature for taproot/script
     logger.debug("Signature: " + signature)
     val pubKeyEncodedCorrectly = BitcoinScriptUtil.isValidPubKeyEncoding(
       pubKey,

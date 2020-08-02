@@ -57,7 +57,7 @@ class CryptoInterpreterTest extends BitcoinSAsyncTest {
     Try(CI.opSha256(program)).isFailure must be(true)
     Try(CI.opHash256(program)).isFailure must be(true)
     Try(CI.opSha1(program)).isFailure must be(true)
-    Try(CI.opCheckSig(program)).isFailure must be(true)
+    Try(CI.opCheckSigPreTapscript(program)).isFailure must be(true)
     Try(CI.opCheckSigVerify(program)).isFailure must be(true)
     Try(CI.opCodeSeparator(program)).isFailure must be(true)
     Try(CI.opCheckMultiSig(program)).isFailure must be(true)
@@ -217,7 +217,7 @@ class CryptoInterpreterTest extends BitcoinSAsyncTest {
                                                                    script)
     val programWithFlags = program.replaceFlags(flags)
     val newProgram = ScriptProgramTestUtil.toExecutedScriptProgram(
-      CI.opCheckSig(programWithFlags))
+      CI.opCheckSigPreTapscript(programWithFlags))
     newProgram.error must be(Some(ScriptErrorSigDer))
 
   }

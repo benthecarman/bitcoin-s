@@ -13,3 +13,9 @@ case object SigVersionBase extends SignatureVersion
 
 /** The digest algorithm implemented by BIP143 [[https://github.com/bitcoin/bips/blob/master/bip-0143.mediawiki]] */
 case object SigVersionWitnessV0 extends SignatureVersion
+
+/** The digest algorithm implemented by BIP341 [[https://github.com/bitcoin/bips/blob/master/bip-341.mediawiki]] */
+case object SigVersionTaproot extends SignatureVersion
+
+/** The digest algorithm implemented by BIP342 [[https://github.com/bitcoin/bips/blob/master/bip-342.mediawiki]] */
+case object SigVersionTapscript extends SignatureVersion
