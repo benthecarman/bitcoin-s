@@ -68,7 +68,7 @@ object BitcoinSUnitTest {
   /** The number of times new code
     * should be executed in a property based test
     */
-  val NEW_CODE_EXECUTIONS = 100
+  val NEW_CODE_EXECUTIONS = 10000
 
   /** The number of times old code should be executed
     * in a property based test

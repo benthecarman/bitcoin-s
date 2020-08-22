@@ -265,7 +265,13 @@ object TxUtil {
 
       val actualFee = creditingAmount - spentAmount
       val estimatedFee = expectedFeeRate * expectedTx
-      isValidFeeRange(estimatedFee, actualFee, expectedFeeRate)
+      val res = isValidFeeRange(estimatedFee, actualFee, expectedFeeRate)
+      if (res.isFailure) {
+        println(inputInfos.mkString("\n"))
+        println(tx.hex)
+        println(expectedFeeRate)
+      }
+      res
     }
   }
 

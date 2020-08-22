@@ -41,6 +41,7 @@ class SignerTest extends BitcoinSAsyncTest {
 
   behavior of "Signer"
 
+  /*
   it should "fail to sign a UnassignedSegwit UTXO" in {
     val p2wpkh = GenUtil.sample(CreditingTxGen.p2wpkhOutput)
     val tx = GenUtil.sample(TransactionGenerators.baseTransaction)
@@ -197,7 +198,7 @@ class SignerTest extends BitcoinSAsyncTest {
         correctSigsF.map(x => assert(x.forall(_ == true)))
     }
   }
-
+   */
   def inputIndex(
       spendingInfo: InputSigningInfo[InputInfo],
       tx: Transaction): Int = {
