@@ -57,6 +57,7 @@ lazy val `bitcoin-s` = project
     cryptoTest,
     dbCommons,
     dbCommonsTest,
+    esploraApi,
     feeProvider,
     feeProviderTest,
     dlcOracle,
@@ -338,6 +339,15 @@ lazy val dbCommonsTest = project
     name := "bitcoin-s-db-commons-test"
   )
   .dependsOn(testkit)
+
+lazy val esploraApi = project
+  .in(file("esplora-api"))
+  .settings(CommonSettings.prodSettings: _*)
+  .settings(
+    name := "bitcoin-s-esplora-api",
+    libraryDependencies ++= Deps.esploraApi
+  )
+  .dependsOn(core, appCommons)
 
 lazy val feeProvider = project
   .in(file("fee-provider"))

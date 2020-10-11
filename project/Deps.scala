@@ -280,6 +280,12 @@ object Deps {
     Compile.logback
   )
 
+  val esploraApi = List(
+    Compile.akkaHttp,
+    Compile.akkaStream,
+    Compile.newMicroPickle
+  )
+
   val dbCommons = List(
     Compile.flyway,
     Compile.slick,

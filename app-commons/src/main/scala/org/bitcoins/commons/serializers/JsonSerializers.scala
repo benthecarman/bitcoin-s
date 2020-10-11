@@ -19,6 +19,7 @@ import java.time.LocalDateTime
 
 import org.bitcoins.commons.jsonmodels.bitcoind.RpcOpts.AddressType
 import org.bitcoins.commons.jsonmodels.bitcoind._
+import org.bitcoins.commons.jsonmodels.esplora._
 import org.bitcoins.commons.jsonmodels.wallet._
 import org.bitcoins.crypto._
 import play.api.libs.functional.syntax._
@@ -552,6 +553,22 @@ object JsonSerializers {
 
   implicit val mempoolSpaceResultReads: Reads[MempoolSpaceResult] =
     Json.reads[MempoolSpaceResult]
+
+  implicit val addressChainStatsReads: Reads[AddressChainStats] =
+    Json.reads[AddressChainStats]
+
+  implicit val addressStatsReads: Reads[AddressStats] =
+    Json.reads[AddressStats]
+
+  implicit val vOutInfoReads: Reads[vOutInfo] = Json.reads[vOutInfo]
+
+  implicit val vInInfoReads: Reads[vInInfo] = Json.reads[vInInfo]
+
+  implicit val txStatusReads: Reads[TransactionStatus] =
+    Json.reads[TransactionStatus]
+
+  implicit val txInfoReads: Reads[TransactionInfo] =
+    Json.reads[TransactionInfo]
 
   // Map stuff
   implicit def mapDoubleSha256DigestReadsPreV19: Reads[
