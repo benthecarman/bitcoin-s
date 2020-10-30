@@ -2,6 +2,7 @@ package org.bitcoins.core.protocol.tlv
 
 import java.nio.charset.StandardCharsets
 
+import org.bitcoins.core.dlc.{MultiNonce, SingleNonce}
 import org.bitcoins.core.number._
 import org.bitcoins.core.protocol.BigSizeUInt
 import org.bitcoins.core.protocol.script.ScriptPubKey
@@ -232,7 +233,11 @@ object PongTLV extends TLVFactory[PongTLV] {
 }
 
 sealed trait EventDescriptorTLV extends TLV {
+
   def noncesNeeded: Int
+
+  def outcomes: Vector[String]
+
 }
 
 object EventDescriptorTLV extends TLVParentFactory[EventDescriptorTLV] {
@@ -251,7 +256,8 @@ object EventDescriptorTLV extends TLVParentFactory[EventDescriptorTLV] {
   * @param outcomes The set of possible outcomes
   */
 case class EnumEventDescriptorV0TLV(outcomes: Vector[String])
-    extends EventDescriptorTLV {
+    extends EventDescriptorTLV
+    with SingleNonce {
   override def tpe: BigSizeUInt = EnumEventDescriptorV0TLV.tpe
 
   override val value: ByteVector = {
@@ -305,7 +311,8 @@ case class RangeEventDescriptorV0TLV(
     step: UInt16,
     unit: String,
     precision: Int32)
-    extends EventDescriptorTLV {
+    extends EventDescriptorTLV
+    with SingleNonce {
 
   override val tpe: BigSizeUInt = RangeEventDescriptorV0TLV.tpe
 
@@ -317,14 +324,14 @@ case class RangeEventDescriptorV0TLV(
       unitSize.bytes ++ unitBytes ++ precision.bytes
   }
 
-  lazy val outcomes: Vector[Int32] = {
+  override val outcomes: Vector[String] = {
     val startL = start.toLong
     val stepL = step.toLong
 
     val range =
       0L.until(count.toLong).map(num => startL + (num * stepL))
 
-    range.map(Int32(_)).toVector
+    range.map(i => s"$i").toVector
   }
 
   override def noncesNeeded: Int = 1
@@ -349,7 +356,9 @@ object RangeEventDescriptorV0TLV extends TLVFactory[RangeEventDescriptorV0TLV] {
 }
 
 /** Describes a large range event using numerical decomposition */
-trait DigitDecompositionEventDescriptorV0TLV extends EventDescriptorTLV {
+trait DigitDecompositionEventDescriptorV0TLV
+    extends EventDescriptorTLV
+    with MultiNonce {
 
   /** The base in which the outcome value is decomposed */
   def base: UInt16
@@ -359,6 +368,9 @@ trait DigitDecompositionEventDescriptorV0TLV extends EventDescriptorTLV {
 
   /** The number of digits that the oracle will sign */
   def numDigits: UInt16
+
+  /** An array of R values, one for each of the digit */
+  override def nonces: Vector[SchnorrNonce]
 
   /** The unit of the outcome value */
   def unit: String
@@ -386,6 +398,23 @@ trait DigitDecompositionEventDescriptorV0TLV extends EventDescriptorTLV {
   override def noncesNeeded: Int = {
     if (isSigned) numDigits.toInt + 1
     else numDigits.toInt
+  }
+
+  /** The maximum number in the large event range */
+  def max: Long = {
+    (base.toInt * numDigits) * Math
+      .pow(10, precision.toInt)
+      .toLong
+  }
+
+  /** the minimum number in the large event range */
+  def min: Long = {
+    if (isSigned) -max
+    else 0
+  }
+
+  def outcomes: Vector[String] = {
+    min.until(max).map(i => i.toString).toVector
   }
 }
 
