@@ -26,4 +26,12 @@ class EventDescriptorTest extends BitcoinSUnitTest {
 
     assert(rangeEventDescriptorV0TLV.outcomes == Vector("-2", "-1", "0", "1"))
   }
+
+  it must "create a signed digit decomposition event" in {
+    val descriptor =
+      UnsignedDigitDecompositionEventDescriptor(base = UInt16.one,
+                                                numDigits = UInt16.one,
+                                                unit = "BTC/USD",
+                                                precision = Int32.one)
+  }
 }
