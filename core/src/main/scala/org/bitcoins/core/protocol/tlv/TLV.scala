@@ -395,7 +395,7 @@ trait DigitDecompositionEventDescriptorV0TLV extends EventDescriptorTLV {
   def max: Long = {
     (base.toInt * numDigits.toInt) * Math
       .pow(10, precision.toInt)
-      .toLong
+      .toLong - 1
   }
 
   /** the minimum number in the large event range */
@@ -405,7 +405,7 @@ trait DigitDecompositionEventDescriptorV0TLV extends EventDescriptorTLV {
   }
 
   def outcomes: Vector[String] = {
-    min.until(max).map(i => i.toString).toVector
+    min.to(max).map(i => i.toString).toVector
   }
 }
 

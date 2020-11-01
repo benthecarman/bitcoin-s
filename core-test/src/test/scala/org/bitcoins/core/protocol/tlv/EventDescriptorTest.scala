@@ -1,9 +1,7 @@
 package org.bitcoins.core.protocol.tlv
 
-import org.bitcoins.commons.jsonmodels.dlc.DLCMessage.DLCAccept
 import org.bitcoins.core.number.{Int32, UInt16, UInt32}
 import org.bitcoins.testkit.util.BitcoinSUnitTest
-import ujson.Value
 
 class EventDescriptorTest extends BitcoinSUnitTest {
 
@@ -29,9 +27,13 @@ class EventDescriptorTest extends BitcoinSUnitTest {
 
   it must "create a signed digit decomposition event" in {
     val descriptor =
-      UnsignedDigitDecompositionEventDescriptor(base = UInt16.one,
-                                                numDigits = UInt16.one,
+      UnsignedDigitDecompositionEventDescriptor(base = UInt16(10),
+                                                numDigits = UInt16(1),
                                                 unit = "BTC/USD",
-                                                precision = Int32.one)
+                                                precision = Int32.zero)
+
+    assert(descriptor.max == 9)
+    assert(descriptor.min == 0)
+    assert(descriptor.outcomes == 0.until(10).map(i => i.toString))
   }
 }
