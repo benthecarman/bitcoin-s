@@ -54,18 +54,21 @@ class EventDescriptorTest extends BitcoinSUnitTest {
                                                 unit = "BTC/USD",
                                                 precision = Int32.zero)
 
-    assert(descriptor.max == 9)
+    assert(descriptor.max == 1)
     assert(descriptor.min == 0)
-    assert(descriptor.outcomes == 0.until(10).map(i => i.toString))
+    assert(descriptor.outcomes == 0.until(1).map(i => i.toString))
 
     val descriptor1 = descriptor.copy(precision = Int32.one)
 
-    assert(descriptor1.outcomes == 0.until(100).map(i => i.toString))
+    assert(descriptor1.max == 1)
+    assert(descriptor1.min == 0)
+    assert(descriptor1.outcomes == 0.until(10).map(i => i.toString))
 
     val descriptor2 = descriptor.copy(precision = Int32.negOne)
 
-    //Vector("0.0", "0.1" ..., "0.9") ?
-    assert(descriptor2.outcomes == Vector.empty)
+    assert(descriptor2.max == 0.9)
+    assert(descriptor2.min == 0)
+    assert(descriptor2.outcomes == 0.until(10).map(i => s"0.$i"))
   }
 
   it must "create a signed digit decomposition event" in {
