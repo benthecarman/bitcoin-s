@@ -47,6 +47,22 @@ class EventDescriptorTest extends BitcoinSUnitTest {
                                                           "0.1"))
   }
 
+  it must "be illegal to have num digits be negative or zero" in {
+    intercept[IllegalArgumentException] {
+      UnsignedDigitDecompositionEventDescriptor(base = UInt16(10),
+                                                numDigits = UInt16.zero,
+                                                unit = "BTC/USD",
+                                                precision = Int32.zero)
+    }
+
+    intercept[IllegalArgumentException] {
+      SignedDigitDecompositionEventDescriptor(base = UInt16(10),
+                                              numDigits = UInt16.zero,
+                                              unit = "",
+                                              precision = Int32.zero)
+    }
+  }
+
   it must "create a unsigned digit decomposition event" in {
     val descriptor =
       UnsignedDigitDecompositionEventDescriptor(base = UInt16(10),
@@ -54,15 +70,15 @@ class EventDescriptorTest extends BitcoinSUnitTest {
                                                 unit = "BTC/USD",
                                                 precision = Int32.zero)
 
-    assert(descriptor.max == 1)
+    assert(descriptor.max == 9)
     assert(descriptor.min == 0)
-    assert(descriptor.outcomes == 0.until(1).map(i => i.toString))
+    assert(descriptor.outcomes == 0.until(10).map(i => i.toString))
 
-    val descriptor1 = descriptor.copy(precision = Int32.one)
+    val descriptor1 = descriptor.copy(numDigits = UInt16.zero)
 
-    assert(descriptor1.max == 1)
+    assert(descriptor1.max == 0)
     assert(descriptor1.min == 0)
-    assert(descriptor1.outcomes == 0.until(10).map(i => i.toString))
+    assert(descriptor1.outcomes == Vector("0"))
 
     val descriptor2 = descriptor.copy(precision = Int32.negOne)
 

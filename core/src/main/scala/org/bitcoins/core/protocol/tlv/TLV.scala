@@ -361,6 +361,8 @@ object RangeEventDescriptorV0TLV extends TLVFactory[RangeEventDescriptorV0TLV] {
   * @see https://github.com/discreetlogcontracts/dlcspecs/blob/540c23a3e89c886814145cf16edfd48421d0175b/Oracle.md#digit-decomposition
   */
 trait DigitDecompositionEventDescriptorV0TLV extends EventDescriptorTLV {
+  require(numDigits > UInt16.zero,
+          s"Cannot have num digits be zero, got=${numDigits}")
 
   /** The base in which the outcome value is decomposed */
   def base: UInt16
@@ -401,9 +403,7 @@ trait DigitDecompositionEventDescriptorV0TLV extends EventDescriptorTLV {
 
   /** The maximum number in the large event range */
   def max: Long = {
-    (base.toInt * numDigits.toInt) * Math
-      .pow(10, precision.toInt)
-      .toLong - 1
+    Math.pow(base.toInt, numDigits.toInt).toLong - 1
   }
 
   /** the minimum number in the large event range */
