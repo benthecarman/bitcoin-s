@@ -250,8 +250,8 @@ object EventDescriptorTLV extends TLVParentFactory[EventDescriptorTLV] {
 
 /**
   * Describes an event over an enumerated set of outcomes
-  * @param nonce The oracle's nonce they will be committing to
   * @param outcomes The set of possible outcomes
+  * @see https://github.com/discreetlogcontracts/dlcspecs/blob/540c23a3e89c886814145cf16edfd48421d0175b/Oracle.md#simple-enumeration
   */
 case class EnumEventDescriptorV0TLV(outcomes: Vector[String])
     extends EventDescriptorTLV {
@@ -301,6 +301,7 @@ object EnumEventDescriptorV0TLV extends TLVFactory[EnumEventDescriptorV0TLV] {
   * @param start The first number in the range
   * @param count The number of possible outcomes
   * @param step The increment between each outcome
+  * @see https://github.com/discreetlogcontracts/dlcspecs/blob/540c23a3e89c886814145cf16edfd48421d0175b/Oracle.md#digit-decomposition
   */
 case class RangeEventDescriptorV0TLV(
     start: Int32,
@@ -320,12 +321,17 @@ case class RangeEventDescriptorV0TLV(
       unitSize.bytes ++ unitBytes ++ precision.bytes
   }
 
-  override val outcomes: Vector[String] = {
+  override lazy val outcomes: Vector[String] = {
     val startL = start.toLong
     val stepL = step.toLong
 
     val range =
-      0L.until(count.toLong).map(num => startL + (num * stepL))
+      0L.until(count.toLong)
+        .map { num =>
+          val double: Double =
+            (startL + (num * stepL)) * Math.pow(10, precision.toInt)
+          double.toString
+        }
 
     range.map(i => s"$i").toVector
   }
@@ -351,7 +357,9 @@ object RangeEventDescriptorV0TLV extends TLVFactory[RangeEventDescriptorV0TLV] {
   }
 }
 
-/** Describes a large range event using numerical decomposition */
+/** Describes a large range event using numerical decomposition
+  * @see https://github.com/discreetlogcontracts/dlcspecs/blob/540c23a3e89c886814145cf16edfd48421d0175b/Oracle.md#digit-decomposition
+  */
 trait DigitDecompositionEventDescriptorV0TLV extends EventDescriptorTLV {
 
   /** The base in which the outcome value is decomposed */
@@ -404,7 +412,7 @@ trait DigitDecompositionEventDescriptorV0TLV extends EventDescriptorTLV {
     else 0
   }
 
-  def outcomes: Vector[String] = {
+  override lazy val outcomes: Vector[String] = {
     min.to(max).map(i => i.toString).toVector
   }
 }
