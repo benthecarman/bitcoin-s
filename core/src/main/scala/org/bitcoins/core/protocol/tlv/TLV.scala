@@ -1,6 +1,7 @@
 package org.bitcoins.core.protocol.tlv
 
 import java.nio.charset.StandardCharsets
+
 import org.bitcoins.core.number._
 import org.bitcoins.core.protocol.BigSizeUInt
 import org.bitcoins.core.protocol.script.ScriptPubKey
@@ -11,6 +12,9 @@ import org.bitcoins.core.protocol.tlv.TLV.{
 }
 import org.bitcoins.crypto._
 import scodec.bits.ByteVector
+
+import scala.collection.immutable.NumericRange
+import scala.math.Numeric.BigDecimalAsIfIntegral
 
 sealed trait TLV extends NetworkElement {
   def tpe: BigSizeUInt
@@ -402,18 +406,32 @@ trait DigitDecompositionEventDescriptorV0TLV extends EventDescriptorTLV {
   }
 
   /** The maximum number in the large event range */
-  def max: Long = {
-    Math.pow(base.toInt, numDigits.toInt).toLong - 1
+  def max: BigDecimal = {
+    (Math.pow(base.toInt, numDigits.toInt).toLong - 1) * step
   }
 
   /** the minimum number in the large event range */
-  def min: Long = {
+  def min: BigDecimal = {
     if (isSigned) -max
     else 0
   }
 
+  /** Useful for calculating the range out of outcomes.
+    * This is how big of a "step" we take for each new value
+    */
+  private val step: BigDecimal = {
+    Math.pow(base.toInt, precision.toInt)
+  }
+
   override lazy val outcomes: Vector[String] = {
-    min.to(max).map(i => i.toString).toVector
+    NumericRange
+      .inclusive[BigDecimal](min, max, step)(BigDecimalAsIfIntegral)
+      .toVector
+      .map { num =>
+        //val context = new MathContext(-precision.toInt)
+        val string = num.formatted(s"%.${-precision.toInt}f")
+        string
+      }
   }
 }
 
