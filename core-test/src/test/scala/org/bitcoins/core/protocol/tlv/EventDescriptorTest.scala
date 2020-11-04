@@ -108,13 +108,48 @@ class EventDescriptorTest extends BitcoinSUnitTest {
                                               precision = Int32.zero)
     assert(descriptor.outcomes == -9.until(10).map(i => i.toString))
 
-    val descriptor1 = descriptor.copy(precision = Int32.one)
+    val descriptor1 = descriptor.copy(precision = Int32.negOne)
 
-    assert(descriptor1.outcomes == -99.until(100).map(i => i.toString))
+    val expected =
+      NumericRange[BigDecimal](start = -0.9, end = 1.0, step = 0.1)(
+        BigDecimalAsIfIntegral).toVector
+        .map(_.toString())
 
-    val descriptor2 = descriptor1.copy(precision = Int32.negOne)
-    BigDecimal(0).toString()
-    //Vector("-0.9", "-0.8" ... "0.9") ?
-    assert(descriptor2.outcomes == Vector.empty)
+    assert(descriptor1.max == 0.9)
+    assert(descriptor1.min == -0.9)
+    assert(descriptor1.outcomes == expected)
+
+    val descriptor2 = descriptor1.copy(precision = Int32(-2))
+
+    assert(descriptor2.min == -0.09)
+    assert(descriptor2.max == 0.09)
+    val expected2 =
+      NumericRange[BigDecimal](start = -0.09, end = 0.1, step = 0.01)(
+        BigDecimalAsIfIntegral).toVector
+        .map(_.toString())
+
+    assert(expected2 == descriptor2.outcomes)
+
+    val descriptor3 = descriptor2.copy(numDigits = UInt16(2))
+    assert(descriptor3.min == -0.99)
+    assert(descriptor3.max == 0.99)
+    val expected3 =
+      NumericRange[BigDecimal](start = -0.99, end = 1, step = 0.01)(
+        BigDecimalAsIfIntegral).toVector
+        .map(_.toString())
+    assert(descriptor3.outcomes == expected3)
+
+    val descriptor4 =
+      descriptor3.copy(numDigits = UInt16(3), precision = Int32(-1))
+
+    assert(descriptor4.max == 99.9)
+    assert(descriptor4.min == -99.9)
+
+    val expected4 =
+      NumericRange[BigDecimal](start = -99.9, end = 100, step = 0.1)(
+        BigDecimalAsIfIntegral).toVector
+        .map(_.toString())
+
+    assert(descriptor4.outcomes == expected4)
   }
 }

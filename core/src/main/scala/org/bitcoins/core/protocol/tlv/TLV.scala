@@ -429,7 +429,15 @@ trait DigitDecompositionEventDescriptorV0TLV extends EventDescriptorTLV {
       .toVector
       .map { num =>
         //val context = new MathContext(-precision.toInt)
-        val string = num.formatted(s"%.${-precision.toInt}f")
+
+        val string = if (precision < Int32.zero) {
+          num.formatted(s"%.${-precision.toInt}f")
+        } else if (precision == Int32.zero) {
+          num.toBigIntExact.get.toString()
+        } else {
+          println(s"num.toString=${num.toString()}")
+          num.toString()
+        }
         string
       }
   }
