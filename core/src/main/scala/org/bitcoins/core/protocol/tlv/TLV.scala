@@ -424,22 +424,28 @@ trait DigitDecompositionEventDescriptorV0TLV extends EventDescriptorTLV {
   }
 
   override lazy val outcomes: Vector[String] = {
+    outcomesBigDec.map { num =>
+      val string = if (precision < Int32.zero) {
+        num.formatted(s"%.${-precision.toInt}f")
+      } else if (precision == Int32.zero) {
+        num.toBigIntExact.get.toString()
+      } else {
+        num.toString()
+      }
+      string
+    }
+  }
+
+  /** All of outcomes in big decimal format. This is useful for applications doing things
+    * based on the outcomes.
+    * WARNING: For large ranges of outcomes, this can take a lot of memory. This collection that is returned
+    * is eagerly evaluated rather than being lazy.
+    * @see [[outcomes]] for strings that will get signed as by the oracle as an outcome
+    */
+  lazy val outcomesBigDec: Vector[BigDecimal] = {
     NumericRange
       .inclusive[BigDecimal](min, max, step)(BigDecimalAsIfIntegral)
       .toVector
-      .map { num =>
-        //val context = new MathContext(-precision.toInt)
-
-        val string = if (precision < Int32.zero) {
-          num.formatted(s"%.${-precision.toInt}f")
-        } else if (precision == Int32.zero) {
-          num.toBigIntExact.get.toString()
-        } else {
-          println(s"num.toString=${num.toString()}")
-          num.toString()
-        }
-        string
-      }
   }
 }
 
