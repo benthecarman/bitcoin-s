@@ -83,6 +83,19 @@ class EventDescriptorTest extends BitcoinSUnitTest {
     }
   }
 
+  it must "serialize and deserialize a range event" in {
+    val hex = "fdd80815fffffffe0000000400010642544355534400000000"
+    val re = RangeEventDescriptorV0TLV(start = Int32(-2),
+                                       count = UInt32(4),
+                                       step = UInt16.one,
+                                       unit = "BTCUSD",
+                                       precision = Int32.zero)
+
+    val reFromHex = RangeEventDescriptorV0TLV.fromHex(hex)
+    assert(reFromHex == re)
+    assert(re.hex == hex)
+  }
+
   it must "create a unsigned digit decomposition event" in {
     val descriptor =
       UnsignedDigitDecompositionEventDescriptor(base = UInt16(10),

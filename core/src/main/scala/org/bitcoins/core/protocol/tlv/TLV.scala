@@ -350,11 +350,11 @@ case class RangeEventDescriptorV0TLV(
     extends EventDescriptorTLV
     with NumericEventDescriptor {
 
-  private val basePrecision: BigDecimal = {
+  private lazy val basePrecision: BigDecimal = {
     BigDecimal(Math.pow(10, precision.toInt))
   }
 
-  override val stepDecimal: BigDecimal = {
+  override lazy val stepDecimal: BigDecimal = {
     basePrecision * step.toInt
   }
 
