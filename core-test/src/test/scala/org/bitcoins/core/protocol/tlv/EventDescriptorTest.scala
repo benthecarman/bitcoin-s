@@ -39,8 +39,9 @@ class EventDescriptorTest extends BitcoinSUnitTest {
 
     assert(rangeEventBasePrecision1.max == 14)
     assert(rangeEventBasePrecision1.min == 0)
-    assert(
-      rangeEventBasePrecision1.outcomes == 0.until(15).toVector.map(_.toString))
+    val rangePrecision1 = 0.until(15).toVector
+    assert(rangeEventBasePrecision1.outcomesBigDec == rangePrecision1)
+    assert(rangeEventBasePrecision1.outcomes == rangePrecision1.map(_.toString))
   }
 
   it must "be illegal to have num digits be negative or zero" in {
@@ -67,24 +68,27 @@ class EventDescriptorTest extends BitcoinSUnitTest {
 
     assert(descriptor.max == 9)
     assert(descriptor.min == 0)
-    assert(descriptor.outcomes == 0.until(10).map(i => i.toString))
+    val range = 0.until(10).toVector
+    assert(descriptor.outcomesBigDec == range)
+    assert(descriptor.outcomes == range.map(i => i.toString))
 
     val descriptor1 = descriptor.copy(numDigits = UInt16(2))
     assert(descriptor1.max == 99)
     assert(descriptor1.min == 0)
-    val expected1 = 0.until(100).map { i =>
+    val expected1 = 0.until(100)
+    val expectedString1 = expected1.map { i =>
       if (i < 10) s"0${i}"
       else i.toString
     }
-    assert(descriptor1.outcomes == expected1)
-    assert(descriptor1.outcomesBigDec == 0.until(100).toVector)
+    assert(descriptor1.outcomes == expectedString1)
+    assert(descriptor1.outcomesBigDec == expected1)
 
     val descriptor2 = descriptor.copy(precision = Int32.negOne)
 
     assert(descriptor2.max == 0.9)
     assert(descriptor2.min == 0)
-    assert(descriptor2.outcomes == 0.until(10).toVector.map(_.toString))
-
+    val expectedString2 = 0.until(10).toVector.map(_.toString)
+    assert(descriptor2.outcomes == expectedString2)
     assert(
       descriptor2.outcomesBigDec == Vector(0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6,
         0.7, 0.8, 0.9))
@@ -94,19 +98,18 @@ class EventDescriptorTest extends BitcoinSUnitTest {
 
     assert(descriptor3.max == 9.9)
     assert(descriptor3.min == 0.0)
-    val expected =
+    val expected3 =
       NumericRange[BigDecimal](start = 0.0, end = 10.0, step = 0.1)(
         BigDecimalAsIfIntegral).toVector
+    assert(descriptor3.outcomesBigDec == expected3)
 
-    assert(descriptor3.outcomesBigDec == expected)
-
-    val expectedStrings: Vector[String] = expected.map { num =>
+    val expectedStrings3: Vector[String] = expected3.map { num =>
       val base =
         (num * Math.pow(10, descriptor3.numDigits.toLong - 1)).toLongExact
       if (base < 10) s"0$base"
       else base.toString
     }
-    assert(descriptor3.outcomes == expectedStrings)
+    assert(descriptor3.outcomes == expectedStrings3)
   }
 
   it must "create a signed digit decomposition event" in {
