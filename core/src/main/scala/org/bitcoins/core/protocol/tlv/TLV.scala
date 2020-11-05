@@ -300,6 +300,39 @@ object EnumEventDescriptorV0TLV extends TLVFactory[EnumEventDescriptorV0TLV] {
   }
 }
 
+trait NumericEventDescriptor { self: EventDescriptorTLV =>
+
+  def stepDecimal: BigDecimal
+
+  /** the maximum valid value a oracle can sign */
+  def max: BigDecimal
+
+  /** The minimum valid value in the oracle can sign */
+  def min: BigDecimal
+
+  /** The precision of the outcome representing the base exponent
+    * by which to multiply the number represented by the composition
+    * of the digits to obtain the actual outcome value
+    */
+  def precision: Int32
+
+  /** All of outcomes in big decimal format. This is useful for applications doing things
+    * based on the outcomes.
+    * WARNING: For large ranges of outcomes, this can take a lot of memory. This collection that is returned
+    * is eagerly evaluated rather than being lazy.
+    * @see [[outcomes]] for strings that will get signed as by the oracle as an outcome
+    */
+  lazy val outcomesBigDec: Vector[BigDecimal] = {
+    NumericRange
+      .inclusive[BigDecimal](start = min, end = max, step = stepDecimal)(
+        BigDecimalAsIfIntegral)
+      .toVector
+  }
+
+  lazy val inverseStep: BigDecimal = 1 / stepDecimal
+
+}
+
 /**
   * Describes a simple event over a range of numbers
   * @param start The first number in the range
@@ -313,7 +346,9 @@ case class RangeEventDescriptorV0TLV(
     step: UInt16,
     unit: String,
     precision: Int32)
-    extends EventDescriptorTLV {
+    extends EventDescriptorTLV
+    with NumericEventDescriptor {
+  override val stepDecimal: BigDecimal = BigDecimal(step.toInt)
 
   override val tpe: BigSizeUInt = RangeEventDescriptorV0TLV.tpe
 
@@ -325,19 +360,18 @@ case class RangeEventDescriptorV0TLV(
       unitSize.bytes ++ unitBytes ++ precision.bytes
   }
 
+  override lazy val min: BigDecimal = BigDecimal(start.toInt)
+
+  override lazy val max: BigDecimal = {
+    val numSteps = count.toLong - 1
+    val result = start.toBigInt + (numSteps * step.toLong)
+    BigDecimal(result)
+  }
+
   override lazy val outcomes: Vector[String] = {
-    val startL = start.toLong
-    val stepL = step.toLong
-
-    val range =
-      0L.until(count.toLong)
-        .map { num =>
-          val double: Double =
-            (startL + (num * stepL)) * Math.pow(10, precision.toInt)
-          double.toString
-        }
-
-    range.map(i => s"$i").toVector
+    outcomesBigDec.map { real =>
+      (real * inverseStep).toString()
+    }
   }
 
   override def noncesNeeded: Int = 1
@@ -364,7 +398,9 @@ object RangeEventDescriptorV0TLV extends TLVFactory[RangeEventDescriptorV0TLV] {
 /** Describes a large range event using numerical decomposition
   * @see https://github.com/discreetlogcontracts/dlcspecs/blob/540c23a3e89c886814145cf16edfd48421d0175b/Oracle.md#digit-decomposition
   */
-trait DigitDecompositionEventDescriptorV0TLV extends EventDescriptorTLV {
+trait DigitDecompositionEventDescriptorV0TLV
+    extends EventDescriptorTLV
+    with NumericEventDescriptor {
   require(numDigits > UInt16.zero,
           s"Cannot have num digits be zero, got=${numDigits}")
 
@@ -379,12 +415,6 @@ trait DigitDecompositionEventDescriptorV0TLV extends EventDescriptorTLV {
 
   /** The unit of the outcome value */
   def unit: String
-
-  /** The precision of the outcome representing the base exponent
-    * by which to multiply the number represented by the composition
-    * of the digits to obtain the actual outcome value
-    */
-  def precision: Int32
 
   override lazy val tpe: BigSizeUInt =
     DigitDecompositionEventDescriptorV0TLV.tpe
@@ -407,7 +437,7 @@ trait DigitDecompositionEventDescriptorV0TLV extends EventDescriptorTLV {
 
   /** The maximum number in the large event range */
   def max: BigDecimal = {
-    (Math.pow(base.toInt, numDigits.toInt).toLong - 1) * step
+    (Math.pow(base.toInt, numDigits.toInt).toLong - 1) * stepDecimal
   }
 
   /** the minimum number in the large event range */
@@ -419,33 +449,26 @@ trait DigitDecompositionEventDescriptorV0TLV extends EventDescriptorTLV {
   /** Useful for calculating the range out of outcomes.
     * This is how big of a "step" we take for each new value
     */
-  private val step: BigDecimal = {
+  override lazy val stepDecimal: BigDecimal = {
     Math.pow(base.toInt, precision.toInt)
   }
 
-  override lazy val outcomes: Vector[String] = {
-    outcomesBigDec.map { num =>
-      val string = if (precision < Int32.zero) {
-        num.formatted(s"%.${-precision.toInt}f")
-      } else if (precision == Int32.zero) {
-        num.toBigIntExact.get.toString()
-      } else {
-        num.toString()
-      }
-      string
-    }
-  }
-
-  /** All of outcomes in big decimal format. This is useful for applications doing things
-    * based on the outcomes.
-    * WARNING: For large ranges of outcomes, this can take a lot of memory. This collection that is returned
-    * is eagerly evaluated rather than being lazy.
-    * @see [[outcomes]] for strings that will get signed as by the oracle as an outcome
+  /** Outcomes for a digit decomposition event
+    * NOTE: Elements in this vector will be padded with leading '0's
+    * so that the number of characters in the string is == [[numDigits]]
+    * Example:
+    * numDigits=2
+    * base=10
+    * isSigned=false
+    * ["00","01","02"...,"09, "10","11" ... "98", "99"]
     */
-  lazy val outcomesBigDec: Vector[BigDecimal] = {
-    NumericRange
-      .inclusive[BigDecimal](min, max, step)(BigDecimalAsIfIntegral)
-      .toVector
+  override lazy val outcomes: Vector[String] = {
+    outcomesBigDec.map { real =>
+      val base = real * inverseStep
+      //https://stackoverflow.com/a/275715/967713
+      DigitDecompositionEventDescriptorV0TLV.digitFormatter(base.toLongExact,
+                                                            numDigits.toInt)
+    }
   }
 }
 
@@ -509,6 +532,11 @@ object DigitDecompositionEventDescriptorV0TLV
                                                 unit,
                                                 precision)
     }
+  }
+
+  def digitFormatter(long: Long, numDigits: Int): String = {
+    val prefix = if (long < 0) "-" else ""
+    prefix + String.format(s"%0${numDigits}d", Math.abs(long))
   }
 }
 
