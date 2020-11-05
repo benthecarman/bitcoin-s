@@ -335,9 +335,10 @@ trait NumericEventDescriptor { self: EventDescriptorTLV =>
 
 /**
   * Describes a simple event over a range of numbers
+  *
   * @param start The first number in the range
   * @param count The number of possible outcomes
-  * @param step The increment between each outcome
+  * @param step  The increment between each outcome
   * @see https://github.com/discreetlogcontracts/dlcspecs/blob/540c23a3e89c886814145cf16edfd48421d0175b/Oracle.md#digit-decomposition
   */
 case class RangeEventDescriptorV0TLV(
@@ -348,7 +349,14 @@ case class RangeEventDescriptorV0TLV(
     precision: Int32)
     extends EventDescriptorTLV
     with NumericEventDescriptor {
-  override val stepDecimal: BigDecimal = BigDecimal(step.toInt)
+
+  private val basePrecision: BigDecimal = {
+    BigDecimal(Math.pow(10, precision.toInt))
+  }
+
+  override val stepDecimal: BigDecimal = {
+    basePrecision * step.toInt
+  }
 
   override val tpe: BigSizeUInt = RangeEventDescriptorV0TLV.tpe
 
@@ -360,17 +368,24 @@ case class RangeEventDescriptorV0TLV(
       unitSize.bytes ++ unitBytes ++ precision.bytes
   }
 
-  override lazy val min: BigDecimal = BigDecimal(start.toInt)
+  override lazy val min: BigDecimal = {
+    start.toLong * basePrecision
+  }
 
   override lazy val max: BigDecimal = {
     val numSteps = count.toLong - 1
-    val result = start.toBigInt + (numSteps * step.toLong)
-    BigDecimal(result)
+    val maxNoPrecision = min + (numSteps * stepDecimal)
+    maxNoPrecision
   }
 
   override lazy val outcomes: Vector[String] = {
     outcomesBigDec.map { real =>
-      (real * inverseStep).toString()
+      if (real.isWhole && precision.toInt >= 0) {
+        //for the case where we have a whole number
+        //and our precision is not negative
+        //we want to serialize a value as "1" NOT "1.0".
+        real.toLongExact.toString
+      } else real.toString()
     }
   }
 

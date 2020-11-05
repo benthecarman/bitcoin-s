@@ -37,11 +37,35 @@ class EventDescriptorTest extends BitcoinSUnitTest {
                                 unit = "",
                                 precision = Int32(2))
 
-    assert(rangeEventBasePrecision1.max == 14)
+    assert(rangeEventBasePrecision1.max == 1400)
     assert(rangeEventBasePrecision1.min == 0)
-    val rangePrecision1 = 0.until(15).toVector
+    val rangePrecision1 =
+      NumericRange.inclusive(start = 0, end = 1400, step = 100).toVector
     assert(rangeEventBasePrecision1.outcomesBigDec == rangePrecision1)
     assert(rangeEventBasePrecision1.outcomes == rangePrecision1.map(_.toString))
+
+  }
+
+  it must "handle a range event with negative precision" in {
+    //https://suredbits.slack.com/archives/CVA6LJA4E/p1604514328172300?thread_ts=1604507650.160900&cid=CVA6LJA4E
+    val rangeEventBasePrecision1 =
+      RangeEventDescriptorV0TLV(start = Int32(-10),
+                                count = UInt32(20),
+                                step = UInt16(5),
+                                unit = "",
+                                precision = Int32.negOne)
+    val range =
+      NumericRange[BigDecimal](start = -1.0,
+                               end = 9.0,
+                               step =
+                                 rangeEventBasePrecision1.step.toInt * 0.1)(
+        BigDecimalAsIfIntegral).toVector
+    assert(rangeEventBasePrecision1.stepDecimal == 0.5)
+    assert(rangeEventBasePrecision1.min == -1)
+    assert(rangeEventBasePrecision1.max == 8.5)
+    assert(rangeEventBasePrecision1.outcomesBigDec == range)
+
+    assert(rangeEventBasePrecision1.outcomes == range.map(_.toString()))
   }
 
   it must "be illegal to have num digits be negative or zero" in {
