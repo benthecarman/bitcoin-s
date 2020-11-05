@@ -551,7 +551,13 @@ object DigitDecompositionEventDescriptorV0TLV
 
   def digitFormatter(long: Long, numDigits: Int): String = {
     val prefix = if (long < 0) "-" else ""
-    prefix + String.format(s"%0${numDigits}d", Math.abs(long))
+    //this has to be cast to be the object java.lang.Long in java
+    //NOT the primitive long (note lowercase 'l')
+    //otherwise we get a compiler error on scala 2.12.x
+    val abs = Math.abs(long)
+    val number: java.lang.Long = java.lang.Long.valueOf(abs)
+
+    prefix + String.format(s"%0${numDigits}d", number)
   }
 }
 
