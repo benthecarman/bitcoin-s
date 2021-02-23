@@ -1,7 +1,5 @@
 package org.bitcoins.dlc.wallet
 
-import java.time.Instant
-
 import org.bitcoins.core.api.chain.ChainQueryApi
 import org.bitcoins.core.api.feeprovider.FeeRateApi
 import org.bitcoins.core.api.node.NodeApi
@@ -9,11 +7,11 @@ import org.bitcoins.core.api.wallet.db._
 import org.bitcoins.core.config.BitcoinNetwork
 import org.bitcoins.core.crypto.ExtPublicKey
 import org.bitcoins.core.currency._
+import org.bitcoins.core.hd.{AddressType, BIP32Path, HDChainType}
+import org.bitcoins.core.number.UInt32
 import org.bitcoins.core.protocol.dlc.DLCMessage._
 import org.bitcoins.core.protocol.dlc.DLCStatus._
 import org.bitcoins.core.protocol.dlc._
-import org.bitcoins.core.hd.{AddressType, BIP32Path, HDChainType}
-import org.bitcoins.core.number.UInt32
 import org.bitcoins.core.protocol.script._
 import org.bitcoins.core.protocol.tlv._
 import org.bitcoins.core.protocol.transaction._
@@ -32,6 +30,7 @@ import org.bitcoins.wallet.config.WalletAppConfig
 import org.bitcoins.wallet.{Wallet, WalletLogger}
 import scodec.bits.ByteVector
 
+import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 
 abstract class DLCWallet extends Wallet with AnyDLCHDWalletApi {
@@ -190,10 +189,7 @@ abstract class DLCWallet extends Wallet with AnyDLCHDWalletApi {
         .get
         .key
 
-    networkParameters match {
-      case bitcoinNetwork: BitcoinNetwork =>
-        DLCPublicKeys.fromPubKeys(fundingKey, payoutKey, bitcoinNetwork)
-    }
+    DLCPublicKeys.fromPubKeys(fundingKey, payoutKey, networkParameters)
   }
 
   private def writeDLCKeysToAddressDb(
@@ -411,6 +407,26 @@ abstract class DLCWallet extends Wallet with AnyDLCHDWalletApi {
     }
   }
 
+  protected def findDLCOffer(
+      paramHash: Sha256DigestBE): Future[Option[DLCOffer]] = {
+    for {
+      dlcOfferDbOpt <- dlcOfferDAO.findByParamHash(paramHash)
+      dlcOfferOpt <- dlcOfferDbOpt match {
+        case None => FutureUtil.none
+        case Some(dlcOfferDb) =>
+          for {
+            fundingInputs <-
+              dlcInputsDAO.findByParamHash(paramHash, isInitiator = true)
+            prevTxs <-
+              transactionDAO.findByTxIdBEs(fundingInputs.map(_.outPoint.txIdBE))
+          } yield {
+            val inputRefs = matchPrevTxsWithInputs(fundingInputs, prevTxs)
+            Some(dlcOfferDb.toDLCOffer(inputRefs))
+          }
+      }
+    } yield dlcOfferOpt
+  }
+
   /** Creates a DLCOffer, if one has already been created
     * with the given parameters then that one will be returned instead.
     *
@@ -432,33 +448,24 @@ abstract class DLCWallet extends Wallet with AnyDLCHDWalletApi {
     logger.debug(
       s"Checking if DLC Offer has already been made (${paramHash.hex})")
 
-    for {
-      feeRate <- determineFeeRate(feeRateOpt)
-      satoshisPerVirtualByte = SatoshisPerVirtualByte(feeRate.currencyUnit)
-      dlcOfferDbOpt <- dlcOfferDAO.findByParamHash(paramHash)
-      dlcOffer <- dlcOfferDbOpt match {
-        case Some(dlcOfferDb) =>
-          logger.debug(
-            s"DLC Offer (${paramHash.hex}) has already been made, returning offer")
+    findDLCOffer(paramHash).flatMap {
+      case Some(offer) =>
+        logger.debug(
+          s"DLC Offer (${paramHash.hex}) has already been made, returning offer")
+        Future.successful(offer)
+      case None =>
+        for {
+          feeRate <- determineFeeRate(feeRateOpt)
+          satoshisPerVirtualByte = SatoshisPerVirtualByte(feeRate.currencyUnit)
 
-          for {
-            fundingInputs <-
-              dlcInputsDAO.findByParamHash(paramHash, isInitiator = true)
-            prevTxs <-
-              transactionDAO.findByTxIdBEs(fundingInputs.map(_.outPoint.txIdBE))
-          } yield {
-            val inputRefs = matchPrevTxsWithInputs(fundingInputs, prevTxs)
-            dlcOfferDb.toDLCOffer(inputRefs)
-          }
-        case None =>
-          createNewDLCOffer(
+          offer <- createNewDLCOffer(
             collateral = collateral,
             contractInfo = contractInfo,
             feeRate = satoshisPerVirtualByte,
             timeouts = timeouts
           )
-      }
-    } yield dlcOffer
+        } yield offer
+    }
   }
 
   private def createNewDLCOffer(
