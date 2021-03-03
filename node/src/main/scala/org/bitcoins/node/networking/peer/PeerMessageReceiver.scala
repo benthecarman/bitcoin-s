@@ -229,6 +229,8 @@ class PeerMessageReceiver(
         Future.successful(this)
       case _: FeeFilterMessage =>
         Future.successful(this)
+      case DisableTxMessage =>
+        Future.successful(this)
     }
   }
 

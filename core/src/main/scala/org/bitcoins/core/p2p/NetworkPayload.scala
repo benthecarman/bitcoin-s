@@ -1,10 +1,9 @@
 package org.bitcoins.core.p2p
 
-import java.net.{InetAddress, InetSocketAddress}
 import org.bitcoins.core.bloom.{BloomFilter, BloomFlag}
 import org.bitcoins.core.config.NetworkParameters
 import org.bitcoins.core.gcs.{FilterHeader, FilterType, GolombFilter}
-import org.bitcoins.core.number.{Int32, Int64, UInt16, UInt32, UInt64}
+import org.bitcoins.core.number._
 import org.bitcoins.core.protocol.CompactSizeUInt
 import org.bitcoins.core.protocol.blockchain.{Block, BlockHeader, MerkleBlock}
 import org.bitcoins.core.protocol.transaction.Transaction
@@ -18,6 +17,8 @@ import org.bitcoins.crypto.{
   NetworkElement
 }
 import scodec.bits.ByteVector
+
+import java.net.{InetAddress, InetSocketAddress}
 
 /** Trait that represents a payload for a message on the Bitcoin p2p network
   * @see [[https://bitcoin.org/en/developer-reference#p2p-network]]
@@ -703,6 +704,11 @@ object AddrV2Message extends Factory[AddrV2Message] {
   */
 case object SendAddrV2Message extends ControlPayload {
   override val commandName: String = NetworkPayload.sendAddrV2CommandName
+  override val bytes: ByteVector = ByteVector.empty
+}
+
+case object DisableTxMessage extends ControlPayload {
+  override val commandName: String = NetworkPayload.disableTxCommandName
   override val bytes: ByteVector = ByteVector.empty
 }
 
@@ -1464,6 +1470,7 @@ object NetworkPayload {
   private[core] val addrCommandName = "addr"
   private[core] val addrV2CommandName = "addrv2"
   private[core] val sendAddrV2CommandName = "sendaddrv2"
+  private[core] val disableTxCommandName = "disabletx"
   private[core] val feeFilterCommandName = "feefilter"
   private[core] val filterAddCommandName = "filteradd"
   private[core] val filterClearCommandName = "filterclear"
@@ -1506,6 +1513,7 @@ object NetworkPayload {
     sendAddrV2CommandName -> { _: ByteVector =>
       SendAddrV2Message
     },
+    disableTxCommandName -> { _ => DisableTxMessage },
     feeFilterCommandName -> RawFeeFilterMessageSerializer.read,
     filterAddCommandName -> RawFilterAddMessageSerializer.read,
     filterClearCommandName -> { _: ByteVector =>
