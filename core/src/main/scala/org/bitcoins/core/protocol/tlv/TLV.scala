@@ -516,7 +516,7 @@ sealed trait NumericEventDescriptorTLV extends EventDescriptorTLV {
   }
 
   /** The base in which the outcome value is represented */
-  def base: UInt16
+  def base: BigSizeUInt
 
   /** The unit of the outcome value */
   def unit: NormalizedString
@@ -559,7 +559,7 @@ sealed trait DigitDecompositionEventDescriptorV0TLV
   /** The number of digits that the oracle will sign */
   def numDigits: UInt16
 
-  override lazy val maxNum: BigInt = base.toBigInt.pow(numDigits.toInt) - 1
+  override lazy val maxNum: BigInt = base.num.toBigInt.pow(numDigits.toInt) - 1
 
   private lazy val maxDigit: NormalizedString = (base.toInt - 1).toString
 
@@ -622,7 +622,7 @@ sealed trait DigitDecompositionEventDescriptorV0TLV
 
 /** Represents a large range event that can be positive or negative */
 case class SignedDigitDecompositionEventDescriptor(
-    base: UInt16,
+    base: BigSizeUInt,
     numDigits: UInt16,
     unit: NormalizedString,
     precision: Int32)
@@ -630,7 +630,7 @@ case class SignedDigitDecompositionEventDescriptor(
 
 /** Represents a large range event that is unsigned */
 case class UnsignedDigitDecompositionEventDescriptor(
-    base: UInt16,
+    base: BigSizeUInt,
     numDigits: UInt16,
     unit: NormalizedString,
     precision: Int32)
@@ -645,7 +645,7 @@ object DigitDecompositionEventDescriptorV0TLV
       value: ByteVector): DigitDecompositionEventDescriptorV0TLV = {
     val iter = ValueIterator(value)
 
-    val base = iter.takeU16()
+    val base = iter.takeBigSize()
     val isSigned = iter.takeBoolean()
     val unit = iter.takeString()
     val precision = iter.takeI32()
@@ -659,7 +659,7 @@ object DigitDecompositionEventDescriptorV0TLV
   }
 
   def apply(
-      base: UInt16,
+      base: BigSizeUInt,
       isSigned: Boolean,
       numDigits: Int,
       unit: NormalizedString,
@@ -800,7 +800,7 @@ object OracleAnnouncementV0TLV extends TLVFactory[OracleAnnouncementV0TLV] {
   def dummyForKeys(
       privKey: ECPrivateKey,
       nonces: Vector[SchnorrNonce]): OracleAnnouncementTLV = {
-    val eventDescriptor = DigitDecompositionEventDescriptorV0TLV(UInt16(2),
+    val eventDescriptor = DigitDecompositionEventDescriptorV0TLV(BigSizeUInt(2),
                                                                  isSigned =
                                                                    false,
                                                                  nonces.length,

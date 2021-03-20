@@ -64,7 +64,7 @@ trait TLVGen {
   def digitDecompositionEventDescriptorV0TLV: Gen[
     DigitDecompositionEventDescriptorV0TLV] = {
     for {
-      base <- NumberGenerator.uInt16
+      base <- NumberGenerator.bigSizeUInt
       isSigned <- NumberGenerator.bool
       numDigits <- Gen.choose(2, 20)
       unit <- StringGenerators.genUTF8String

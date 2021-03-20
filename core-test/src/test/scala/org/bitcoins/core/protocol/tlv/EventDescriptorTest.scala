@@ -1,6 +1,7 @@
 package org.bitcoins.core.protocol.tlv
 
 import org.bitcoins.core.number.{Int32, UInt16}
+import org.bitcoins.core.protocol.BigSizeUInt
 import org.bitcoins.testkitcore.util.BitcoinSUnitTest
 
 import scala.collection.immutable.NumericRange
@@ -20,13 +21,13 @@ class EventDescriptorTest extends BitcoinSUnitTest {
 
   it must "be illegal to have num digits be zero" in {
     intercept[IllegalArgumentException] {
-      UnsignedDigitDecompositionEventDescriptor(base = UInt16(10),
+      UnsignedDigitDecompositionEventDescriptor(base = BigSizeUInt(10),
                                                 numDigits = UInt16.zero,
                                                 unit = "BTC/USD",
                                                 precision = Int32.zero)
     }
     intercept[IllegalArgumentException] {
-      SignedDigitDecompositionEventDescriptor(base = UInt16(10),
+      SignedDigitDecompositionEventDescriptor(base = BigSizeUInt(10),
                                               numDigits = UInt16.zero,
                                               unit = "test_unit",
                                               precision = Int32.zero)
@@ -34,7 +35,7 @@ class EventDescriptorTest extends BitcoinSUnitTest {
   }
   it must "create a unsigned digit decomposition event" in {
     val descriptor =
-      UnsignedDigitDecompositionEventDescriptor(base = UInt16(10),
+      UnsignedDigitDecompositionEventDescriptor(base = BigSizeUInt(10),
                                                 numDigits = UInt16(1),
                                                 unit = "BTC/USD",
                                                 precision = Int32.zero)
@@ -84,7 +85,7 @@ class EventDescriptorTest extends BitcoinSUnitTest {
 
   it must "create a signed digit decomposition event" in {
     val descriptor =
-      SignedDigitDecompositionEventDescriptor(base = UInt16(10),
+      SignedDigitDecompositionEventDescriptor(base = BigSizeUInt(10),
                                               numDigits = UInt16(1),
                                               unit = "BTC/USD",
                                               precision = Int32.zero)
