@@ -1,0 +1,70 @@
+{
+  "version-0.1.0/docs": [
+    {
+      "type": "category",
+      "label": "Getting started",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.1.0/getting-started"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Core module",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.1.0/core/core-intro"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.1.0/core/txbuilder"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "RPC clients",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.1.0/rpc/rpc-clients-intro"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.1.0/rpc/rpc-eclair"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.1.0/rpc/rpc-bitcoind"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Contributing",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.1.0/contributing"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.1.0/contributing-website"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Security",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.1.0/security"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,208 @@
+{
+  "version-0.3.0/docs": [
+    {
+      "type": "category",
+      "label": "Getting Started",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.3.0/getting-started"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Getting Setup",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.3.0/getting-setup"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Applications",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.3.0/applications/cli"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.3.0/applications/server"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Chain",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.3.0/chain/chain"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.3.0/chain/filter-sync"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Configuration",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.3.0/config/configuration"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Core Module",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.3.0/core/core-intro"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.3.0/core/addresses"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.3.0/core/hd-keys"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.3.0/core/adding-spks"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.3.0/core/spending-info"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.3.0/core/sign"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.3.0/core/psbts"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.3.0/core/txbuilder"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Key Manager",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.3.0/key-manager/key-manager"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Node",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.3.0/node/node"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Wallet",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.3.0/wallet/wallet"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.3.0/wallet/chain-query-api"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.3.0/wallet/node-api"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.3.0/wallet/dlc"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.3.0/wallet/wallet-rescan"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "RPC Clients",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.3.0/rpc/rpc-clients-intro"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.3.0/rpc/rpc-eclair"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.3.0/rpc/rpc-bitcoind"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Secp256k1",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.3.0/secp256k1/secp256k1"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Testkit",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.3.0/testkit/testkit"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Contributing",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.3.0/contributing"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.3.0/contributing-website"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Security",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.3.0/security"
+        }
+      ]
+    }
+  ]
+}

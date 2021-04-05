@@ -1,0 +1,112 @@
+{
+  "version-0.2.0-docs": [
+    {
+      "type": "category",
+      "label": "Getting started",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.2.0/getting-started"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Core module",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.2.0/core/core-intro"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.2.0/core/addresses"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.2.0/core/hd-keys"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.2.0/core/txbuilder"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "RPC clients",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.2.0/rpc/rpc-clients-intro"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.2.0/rpc/rpc-eclair"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.2.0/rpc/rpc-bitcoind"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Applications",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.2.0/applications/chain"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.2.0/applications/cli"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.2.0/applications/configuration"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.2.0/applications/key-manager"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.2.0/applications/node"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.2.0/applications/server"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.2.0/applications/wallet"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Contributing",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.2.0/contributing"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.2.0/contributing-website"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Security",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.2.0/security"
+        }
+      ]
+    }
+  ]
+}

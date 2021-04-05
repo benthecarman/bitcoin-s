@@ -1,6 +1,6 @@
 ---
 id: rpc-bitcoind
-title: bitcoind/Bitcoin Core
+title: "bitcoind/Bitcoin Core"
 ---
 
 ## Downloading bitcoind

@@ -1,0 +1,298 @@
+{
+  "version-0.5.0/docs": [
+    {
+      "type": "category",
+      "label": "Getting Started",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.5.0/getting-started"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.5.0/bips"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Getting Setup",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.5.0/getting-setup"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Applications",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.5.0/applications/cli"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.5.0/applications/server"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.5.0/applications/gui"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.5.0/applications/server-systemd"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Chain",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.5.0/chain/chain"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.5.0/chain/filter-sync"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.5.0/chain/chain-query-api"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Configuration",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.5.0/config/configuration"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Core Module",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.5.0/core/core-intro"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.5.0/core/addresses"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.5.0/core/hd-keys"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.5.0/core/adding-spks"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.5.0/core/spending-info"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.5.0/core/psbts"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.5.0/core/dlc"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.5.0/core/txbuilder"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.5.0/core/lightning-network"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Crypto Module",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.5.0/crypto/crypto-intro"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.5.0/crypto/sign"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.5.0/crypto/adaptor-signatures"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Fee Provider",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.5.0/fee-provider/fee-provider"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Key Manager",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.5.0/key-manager/server-key-manager"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.5.0/key-manager/key-manager"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Node",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.5.0/node/node"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.5.0/node/node-api"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Wallet",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.5.0/wallet/wallet"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.5.0/wallet/wallet-callbacks"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.5.0/wallet/wallet-get-address"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.5.0/wallet/address-tagging"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.5.0/wallet/dlc"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.5.0/wallet/wallet-rescan"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.5.0/wallet/wallet-sync"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "RPC Clients",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.5.0/rpc/rpc-clients-intro"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.5.0/rpc/rpc-eclair"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.5.0/rpc/rpc-bitcoind"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Secp256k1",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.5.0/secp256k1/secp256k1"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.5.0/secp256k1/jni-modify"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Testkit",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.5.0/testkit/testkit"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "DLC Oracle",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.5.0/oracle/build-oracle-server"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.5.0/oracle/oracle-server"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.5.0/oracle/oracle-election-example"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.5.0/oracle/oracle-price-example"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Contributing",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.5.0/contributing"
+        },
+        {
+          "type": "doc",
+          "id": "version-0.5.0/contributing-website"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Security",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-0.5.0/security"
+        }
+      ]
+    }
+  ]
+}
