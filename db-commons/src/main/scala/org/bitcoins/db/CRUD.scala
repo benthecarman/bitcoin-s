@@ -91,7 +91,9 @@ abstract class CRUD[T, PrimaryKeyType](implicit
       val actions = ts.map(t => find(t).update(t))
       for {
         _ <- safeDatabase.runVec(DBIO.sequence(actions).transactionally)
+        _ = println("Calling findAll")
         result <- safeDatabase.runVec(findAll(ts).result.transactionally)
+        _ = println("DONE")
       } yield result
     }
   }
