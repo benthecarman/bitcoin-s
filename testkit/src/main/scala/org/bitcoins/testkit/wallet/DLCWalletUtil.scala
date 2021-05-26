@@ -33,7 +33,7 @@ object DLCWalletUtil {
   lazy val oraclePrivKey: ECPrivateKey = ECPrivateKey.freshPrivateKey
 
   lazy val kValues: Vector[ECPrivateKey] =
-    0.to(10).map(_ => ECPrivateKey.freshPrivateKey).toVector
+    0.to(20).map(_ => ECPrivateKey.freshPrivateKey).toVector
   lazy val rValues: Vector[SchnorrNonce] = kValues.map(_.schnorrNonce)
 
   lazy val kValue: ECPrivateKey = kValues.head
@@ -72,7 +72,7 @@ object DLCWalletUtil {
   lazy val sampleOracleLoseSig: SchnorrDigitalSignature =
     oraclePrivKey.schnorrSignWithNonce(loseHash.bytes, kValue)
 
-  val numDigits: Int = 6
+  val numDigits: Int = 17
 
   lazy val multiNonceContractDescriptor: NumericContractDescriptor =
     DLCTestUtil.genMultiDigitContractInfo(numDigits, Satoshis(10000))._1

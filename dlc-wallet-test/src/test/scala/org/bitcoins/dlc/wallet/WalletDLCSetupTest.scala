@@ -1,21 +1,12 @@
 package org.bitcoins.dlc.wallet
 
-import org.bitcoins.core.currency.Satoshis
-import org.bitcoins.core.number.UInt64
 import org.bitcoins.core.protocol.dlc.models.DLCMessage._
 import org.bitcoins.core.protocol.dlc.models._
-import org.bitcoins.core.protocol.script.P2WPKHWitnessV0
-import org.bitcoins.core.protocol.tlv._
-import org.bitcoins.core.wallet.fee.SatoshisPerVirtualByte
-import org.bitcoins.core.wallet.utxo.TxoState
-import org.bitcoins.crypto._
-import org.bitcoins.testkit.wallet.DLCWalletUtil._
 import org.bitcoins.testkit.wallet.FundWalletUtil.FundedDLCWallet
 import org.bitcoins.testkit.wallet.{BitcoinSDualWalletTest, DLCWalletUtil}
 import org.scalatest.{Assertion, FutureOutcome}
 
 import scala.concurrent.Future
-import scala.reflect.ClassTag
 
 class WalletDLCSetupTest extends BitcoinSDualWalletTest {
   type FixtureParam = (FundedDLCWallet, FundedDLCWallet)
@@ -32,6 +23,7 @@ class WalletDLCSetupTest extends BitcoinSDualWalletTest {
     val walletA = fundedDLCWallets._1.wallet
     val walletB = fundedDLCWallets._2.wallet
 
+    println(s"Creating Offer ${System.currentTimeMillis()}")
     for {
       offer <- walletA.createDLCOffer(
         offerData.contractInfo,
@@ -55,6 +47,7 @@ class WalletDLCSetupTest extends BitcoinSDualWalletTest {
         assert(offer.changeAddress.value.nonEmpty)
       }
 
+      _ = println(s"Creating Accept ${System.currentTimeMillis()}")
       accept <- walletB.acceptDLCOffer(offer)
       dlcB1Opt <- walletB.dlcDAO.read(dlcId)
       _ = {
@@ -70,6 +63,7 @@ class WalletDLCSetupTest extends BitcoinSDualWalletTest {
         assert(accept.changeAddress.value.nonEmpty)
       }
 
+      _ = println(s"Creating Sign ${System.currentTimeMillis()}")
       sign <- walletA.signDLC(accept)
       dlcA2Opt <- walletA.dlcDAO.read(dlcId)
       _ = {
@@ -78,6 +72,7 @@ class WalletDLCSetupTest extends BitcoinSDualWalletTest {
         assert(sign.fundingSigs.length == offerData.fundingInputs.size)
       }
 
+      _ = println(s"Adding DLC Sigs ${System.currentTimeMillis()}")
       dlcDb <- walletB.addDLCSigs(sign)
       _ = assert(dlcDb.state == DLCState.Signed)
       outcomeSigs <- walletB.dlcSigsDAO.findByDLCId(dlcId)
@@ -112,17 +107,17 @@ class WalletDLCSetupTest extends BitcoinSDualWalletTest {
       assert(walletBFinal.isDefined)
     }
   }
-
+  /*
   it must "correctly negotiate a dlc" in {
     fundedDLCWallets: (FundedDLCWallet, FundedDLCWallet) =>
       testNegotiate(fundedDLCWallets, DLCWalletUtil.sampleDLCOffer)
   }
-
+   */
   it must "correctly negotiate a dlc with a multi-nonce oracle info" in {
     fundedDLCWallets: (FundedDLCWallet, FundedDLCWallet) =>
       testNegotiate(fundedDLCWallets, DLCWalletUtil.sampleMultiNonceDLCOffer)
   }
-
+  /*
   it must "correctly negotiate a dlc using TLVs" in {
     fundedDLCWallets: (FundedDLCWallet, FundedDLCWallet) =>
       val walletA = fundedDLCWallets._1.wallet
@@ -560,5 +555,5 @@ class WalletDLCSetupTest extends BitcoinSDualWalletTest {
                                    func = func,
                                    expectedOutputs = 1)
       } yield assert(result)
-  }
+  }*/
 }

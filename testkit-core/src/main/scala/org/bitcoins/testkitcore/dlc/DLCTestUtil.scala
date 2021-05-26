@@ -1,11 +1,12 @@
 package org.bitcoins.testkitcore.dlc
 
 import org.bitcoins.core.currency.{CurrencyUnit, Satoshis}
+import org.bitcoins.core.protocol.dlc.compute.CETCalculator
 import org.bitcoins.core.protocol.dlc.models.{
-  DLCPayoutCurve,
+  //DLCPayoutCurve,
   EnumContractDescriptor,
   NumericContractDescriptor,
-  OutcomePayoutEndpoint,
+  //OutcomePayoutEndpoint,
   RoundingIntervals
 }
 import org.bitcoins.core.protocol.tlv.EnumOutcome
@@ -64,6 +65,16 @@ object DLCTestUtil {
       NumericContractDescriptor,
       NumericContractDescriptor) = {
     val overMaxValue = Math.pow(2, numDigits).toLong
+
+    val strikePrice = overMaxValue / 10
+    val func = CETCalculator.lineApprox(
+      { x =>
+        if (x == 0) totalCollateral.satoshis.toLong
+        else (totalCollateral.satoshis.toLong / 2) * strikePrice / x
+      },
+      numDigits,
+      100)
+    /*
     // Left collar goes from [0, botCollar]
     val botCollar = NumberUtil.randomLong(overMaxValue / 2)
     val halfWindow = scala.math.min(overMaxValue / 4, 2500)
@@ -82,17 +93,18 @@ object DLCTestUtil {
         OutcomePayoutEndpoint(botCollar + 1, leftVal),
         OutcomePayoutEndpoint(topCollar, rightVal),
         OutcomePayoutEndpoint(overMaxValue - 1, rightVal)
-      ))
+      ))*/
     val roundingIntervalsToUse =
       if (numRounds > 0 && roundingIntervals == RoundingIntervals.noRounding) {
-        val intervalStarts = 0.until(numRounds).toVector.map { num =>
+        RoundingIntervals(Vector(RoundingIntervals.IntervalStart(0, 100)))
+        /*val intervalStarts = 0.until(numRounds).toVector.map { num =>
           val intervalStart =
             ((numRounds - num) * botCollar + num * topCollar) / numRounds
           val roundingMod = 1L << num
           RoundingIntervals.IntervalStart(BigDecimal(intervalStart),
                                           roundingMod)
         }
-        RoundingIntervals(intervalStarts)
+        RoundingIntervals(intervalStarts)*/
       } else roundingIntervals
     val info =
       NumericContractDescriptor(func, numDigits, roundingIntervalsToUse)
