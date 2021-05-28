@@ -139,7 +139,7 @@ private[bitcoins] trait DLCDataManagement { self: DLCWallet =>
             EnumMultiOracleInfo(contractDataDb.oracleThreshold,
                                 announcementTLVs)
           }
-        ContractInfo(enum, oracleInfo)
+        ContractInfo(contractDataDb.totalCollateral.satoshis, enum, oracleInfo)
       case numeric: NumericContractDescriptor =>
         val oracleInfo =
           if (announcementTLVs.size == 1) {
@@ -318,7 +318,7 @@ private[bitcoins] trait DLCDataManagement { self: DLCWallet =>
       localFundingInputs = fundingInputsDb.filter(_.isInitiator)
 
       prevTxs <-
-        transactionDAO.findByTxIdBEs(fundingInputsDb.map(_.outPoint.txIdBE))
+        transactionDAO.findByTxIdBEs(localFundingInputs.map(_.outPoint.txIdBE))
     } yield {
       val offerFundingInputs =
         matchPrevTxsWithInputs(localFundingInputs, prevTxs)

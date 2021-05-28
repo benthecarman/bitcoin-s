@@ -22,6 +22,7 @@ import org.bitcoins.core.wallet.fee.SatoshisPerVirtualByte
 import org.bitcoins.crypto._
 import org.bitcoins.dlc.wallet.DLCWallet
 import org.bitcoins.dlc.wallet.models._
+import org.bitcoins.testkit.wallet.BitcoinSWalletTest.expectedDefaultAmt
 import org.bitcoins.testkit.wallet.FundWalletUtil.FundedDLCWallet
 import org.bitcoins.testkitcore.dlc.DLCTestUtil
 import org.scalatest.Assertions.fail
@@ -49,7 +50,7 @@ object DLCWalletUtil {
     CryptoUtil.sha256DLCAttestation(loseStr)
 
   val sampleOutcomes: Vector[(EnumOutcome, Satoshis)] = Vector(
-    EnumOutcome(winStr) -> Satoshis(10000),
+    EnumOutcome(winStr) -> (expectedDefaultAmt / Satoshis(2)).satoshis,
     EnumOutcome(loseStr) -> Satoshis.zero)
 
   lazy val sampleContractDescriptor: EnumContractDescriptor =
