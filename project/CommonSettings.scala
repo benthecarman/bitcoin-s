@@ -3,15 +3,7 @@ import com.typesafe.sbt.SbtNativePackager.Docker
 import com.typesafe.sbt.SbtNativePackager.autoImport.packageName
 
 import java.nio.file.Paths
-import com.typesafe.sbt.packager.Keys.{
-  daemonUser,
-  daemonUserUid,
-  dockerAlias,
-  dockerAliases,
-  dockerRepository,
-  dockerUpdateLatest,
-  maintainer
-}
+import com.typesafe.sbt.packager.Keys._
 import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport.dockerBaseImage
 import sbt._
 import sbt.Keys._
@@ -31,6 +23,8 @@ object CommonSettings {
     organization := "org.bitcoin-s",
     homepage := Some(url("https://bitcoin-s.org")),
     maintainer := "Chris Stewart <stewart.chris1234@gmail.com>",
+    packageSummary := "Bitcoin-S Wallet",
+    packageDescription := "Bitcoin-S Wallet",
     developers := List(
       Developer(
         "christewart",

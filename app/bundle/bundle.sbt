@@ -7,6 +7,12 @@ publish / skip := true
 // Fork a new JVM for 'run' and 'test:run' to avoid JavaFX double initialization problems
 fork := true
 
+enablePlugins(JDKPackagerPlugin)
+
+jdkPackagerType := "msi"
+
+jdkAppIcon := Some(new File("/app/gui/src/main/resources/icons/bitcoin-s.ico"))
+
 assembly / mainClass := Some("org.bitcoins.bundle.gui.BundleGUI")
 
 assembly / assemblyJarName := s"${name.value}.jar"
