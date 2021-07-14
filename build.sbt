@@ -687,7 +687,7 @@ lazy val dlcWallet = project
     name := "bitcoin-s-dlc-wallet",
     libraryDependencies ++= Deps.dlcWallet
   )
-  .dependsOn(wallet)
+  .dependsOn(wallet, tor)
 
 lazy val dlcWalletTest = project
   .in(file("dlc-wallet-test"))

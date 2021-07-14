@@ -9,9 +9,11 @@ import org.bitcoins.core.wallet.keymanagement.KeyManagerInitializeError
 import org.bitcoins.db.DatabaseDriver._
 import org.bitcoins.db._
 import org.bitcoins.keymanager.bip39.{BIP39KeyManager, BIP39LockedKeyManager}
+import org.bitcoins.tor.Socks5ProxyParams
 import org.bitcoins.wallet.config.WalletAppConfig
 import org.bitcoins.wallet.{Wallet, WalletLogger}
 
+import java.net.InetSocketAddress
 import java.nio.file._
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -79,6 +81,23 @@ case class DLCAppConfig(private val directory: Path, private val conf: Config*)(
         Some(moduleName)
       case (SQLite, None) | (SQLite, Some(_)) =>
         None
+    }
+  }
+
+  lazy val socks5ProxyParams: Option[Socks5ProxyParams] = {
+    if (config.getBoolean("bitcoin-s.proxy.enabled")) {
+      Some(
+        Socks5ProxyParams(
+          address = InetSocketAddress.createUnresolved(
+            config.getString("bitcoin-s.proxy.host"),
+            config.getInt("bitcoin-s.proxy.port")
+          ),
+          credentialsOpt = None,
+          randomizeCredentials = true
+        )
+      )
+    } else {
+      None
     }
   }
 

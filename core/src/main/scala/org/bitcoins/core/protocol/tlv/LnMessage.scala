@@ -21,6 +21,8 @@ case class LnMessage[+T <: TLV](tlv: T) extends NetworkElement {
   val tpe: UInt16 = UInt16(tlv.tpe.toInt)
   val payload: ByteVector = tlv.value
   override lazy val bytes: ByteVector = tpe.bytes ++ payload
+
+  lazy val typeName: String = tlv.typeName
 }
 
 object LnMessage extends Factory[LnMessage[TLV]] {
