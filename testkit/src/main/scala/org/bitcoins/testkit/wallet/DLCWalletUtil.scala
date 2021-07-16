@@ -1,6 +1,8 @@
 package org.bitcoins.testkit.wallet
 
 import grizzled.slf4j.Logging
+import org.bitcoins.core.api.dlc.wallet.db
+import org.bitcoins.core.api.dlc.wallet.db.DLCDb
 import org.bitcoins.core.crypto.WitnessTxSigComponent
 import org.bitcoins.core.currency._
 import org.bitcoins.core.hd.{BIP32Path, HDAccount, HDChainType}
@@ -198,7 +200,7 @@ object DLCWalletUtil extends Logging {
   lazy val sampleDLCSign: DLCSign =
     DLCSign(dummyCETSigs, dummyFundingSignatures, ByteVector.empty)
 
-  lazy val sampleDLCDb: DLCDb = DLCDb(
+  lazy val sampleDLCDb: DLCDb = db.DLCDb(
     dlcId = Sha256Digest(
       "9da9922b9067007f8d9c56c37f202a568f0cdb104e5ef9752ad6cbc1834f0334"),
     tempContractId = sampleDLCOffer.tempContractId,

@@ -5,13 +5,13 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import akka.stream.Materializer
 import org.bitcoins.commons.serializers.Picklers._
+import org.bitcoins.core.api.dlc.wallet.AnyDLCHDWalletApi
 import org.bitcoins.core.api.wallet.db.SpendingInfoDb
 import org.bitcoins.core.currency._
 import org.bitcoins.core.protocol.tlv._
 import org.bitcoins.core.protocol.transaction.Transaction
 import org.bitcoins.core.wallet.utxo.{AddressLabelTagType, TxoState}
 import org.bitcoins.crypto.NetworkElement
-import org.bitcoins.dlc.wallet.AnyDLCHDWalletApi
 import org.bitcoins.keymanager._
 import org.bitcoins.keymanager.config.KeyManagerAppConfig
 import org.bitcoins.server.routes.{Server, ServerCommand, ServerRoute}
