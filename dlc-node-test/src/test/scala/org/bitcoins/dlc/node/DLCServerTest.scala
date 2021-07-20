@@ -107,9 +107,9 @@ class DLCServerTest
   }
 
   test("send/receive Ping and Pong TLVs over Tor") {
-//    assume(torProxyEnabled, "Tor daemon is not running or listening port 9050")
-//    assume(torControlEnabled,
-//           "Tor daemon is not running or listening port 9051")
+    assume(torProxyEnabled, "Tor daemon is not running or listening port 9050")
+    assume(torControlEnabled,
+           "Tor daemon is not running or listening port 9051")
 
     val timeout = 30.seconds
 
