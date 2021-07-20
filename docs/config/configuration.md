@@ -163,6 +163,9 @@ bitcoin-s {
         
         hikari-logging = true
         hikari-logging-interval = 10 minute
+        
+        # whether to have p2p peers relay us unconfirmed txs
+        relay = false
     }
 
     proxy {
@@ -276,6 +279,13 @@ bitcoin-s {
         db {
           path = ${bitcoin-s.datadir}/oracle/
         }
+    }
+    
+    testkit {
+      pg {
+        #enabled postgres backend database for all test cases
+        enabled = false
+      }
     }
 }
 
