@@ -1,14 +1,13 @@
 package org.bitcoins.dlc.node
 
-import akka.actor.{ActorRef, ActorSystem}
-import akka.testkit.{ImplicitSender, TestActorRef, TestKit, TestProbe}
+import akka.actor.ActorRef
+import akka.testkit.{TestActorRef, TestProbe}
 import org.bitcoins.core.number.UInt16
 import org.bitcoins.core.protocol.tlv.{LnMessage, PingTLV, PongTLV}
 import org.bitcoins.dlc.node.peer.Peer
 import org.bitcoins.rpc.util.RpcUtil
+import org.bitcoins.testkit.util.BitcoinSActorTest
 import org.bitcoins.tor.{Socks5ProxyParams, TorController, TorProtocolHandler}
-import org.scalatest._
-import org.scalatest.funsuite.AnyFunSuiteLike
 import scodec.bits.ByteVector
 
 import java.io.File
@@ -17,21 +16,12 @@ import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Promise}
 import scala.util.Try
 
-class DLCServerTest
-    extends TestKit(ActorSystem("test"))
-    with TestSuite
-    with BeforeAndAfterAll
-    with AnyFunSuiteLike
-    with ImplicitSender {
+class DLCServerTest extends BitcoinSActorTest {
 
   val torProxyAddress = new InetSocketAddress("localhost", 9050)
   val torControlAddress = new InetSocketAddress("localhost", 9051)
   val torProxyEnabled: Boolean = portIsBound(torProxyAddress)
   val torControlEnabled: Boolean = portIsBound(torControlAddress)
-
-  override def afterAll(): Unit = {
-    TestKit.shutdownActorSystem(system)
-  }
 
   test("send/receive Ping and Pong TLVs over clearnet") {
     val port = RpcUtil.randomPort
