@@ -2,20 +2,33 @@ package org.bitcoins.testkit.util
 
 import akka.actor.ActorSystem
 import akka.testkit.{ImplicitSender, TestKit, TestKitBase}
-import org.scalatest.funsuite.AnyFunSuiteLike
+import org.bitcoins.testkit.wallet.BitcoinSWalletTest
+import org.scalatest.flatspec.FixtureAsyncFlatSpec
+import org.scalatest.matchers.must.Matchers
 import org.scalatest.{BeforeAndAfterAll, TestSuite}
 
 trait BitcoinSActorTest
-    extends TestKitBase
+    extends FixtureAsyncFlatSpec
+    with Matchers
+    with TestKitBase
     with TestSuite
     with BeforeAndAfterAll
-    with AnyFunSuiteLike
     with ImplicitSender {
-
-  implicit override lazy val system: ActorSystem = ActorSystem(
-    s"${getClass.getSimpleName}-${System.currentTimeMillis()}")
 
   override def afterAll(): Unit = {
     TestKit.shutdownActorSystem(system)
+  }
+}
+
+trait BitcoinSActorFixtureWithDLCWallet
+    extends BitcoinSActorTest
+    with BitcoinSWalletTest {
+
+  implicit override val system: ActorSystem = ActorSystem(
+    s"${getClass.getSimpleName}-${System.currentTimeMillis()}")
+
+  override def afterAll(): Unit = {
+    super[BitcoinSWalletTest].afterAll()
+    super[BitcoinSActorTest].afterAll()
   }
 }

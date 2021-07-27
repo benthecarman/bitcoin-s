@@ -6,8 +6,11 @@ import org.bitcoins.core.number.UInt16
 import org.bitcoins.core.protocol.tlv.{LnMessage, PingTLV, PongTLV}
 import org.bitcoins.dlc.node.peer.Peer
 import org.bitcoins.rpc.util.RpcUtil
-import org.bitcoins.testkit.util.BitcoinSActorTest
+import org.bitcoins.testkit.util.BitcoinSActorFixtureWithDLCWallet
+
+import org.bitcoins.testkit.wallet.FundWalletUtil.FundedDLCWallet
 import org.bitcoins.tor.{Socks5ProxyParams, TorController, TorProtocolHandler}
+import org.scalatest.FutureOutcome
 import scodec.bits.ByteVector
 
 import java.io.File
@@ -16,14 +19,20 @@ import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Promise}
 import scala.util.Try
 
-class DLCServerTest extends BitcoinSActorTest {
+class DLCServerTest extends BitcoinSActorFixtureWithDLCWallet {
 
   val torProxyAddress = new InetSocketAddress("localhost", 9050)
   val torControlAddress = new InetSocketAddress("localhost", 9051)
   val torProxyEnabled: Boolean = portIsBound(torProxyAddress)
   val torControlEnabled: Boolean = portIsBound(torControlAddress)
 
-  test("send/receive Ping and Pong TLVs over clearnet") {
+  override type FixtureParam = FundedDLCWallet
+
+  override def withFixture(test: OneArgAsyncTest): FutureOutcome = {
+    withFundedDLCWallet(test, getBIP39PasswordOpt())(getFreshConfig)
+  }
+
+  it must "send/receive Ping and Pong TLVs over clearnet" in { dlcWalletApi =>
     val port = RpcUtil.randomPort
     val bindAddress =
       new InetSocketAddress("0.0.0.0", port)
@@ -37,7 +46,7 @@ class DLCServerTest extends BitcoinSActorTest {
 
     TestActorRef(
       DLCServer.props(
-        null, // todo remove nulls
+        dlcWalletApi.wallet,
         bindAddress,
         Some(boundAddressPromise),
         { (_, _, connectionHandler) =>
@@ -53,7 +62,7 @@ class DLCServerTest extends BitcoinSActorTest {
     var clientConnectionHandlerOpt = Option.empty[ActorRef]
     val clientProbe = TestProbe()
     val client = TestActorRef(
-      DLCClient.props(null,
+      DLCClient.props(dlcWalletApi.wallet,
                       Some(connectedAddressPromise),
                       None,
                       { (_, _, connectionHandler) =>
@@ -96,10 +105,10 @@ class DLCServerTest extends BitcoinSActorTest {
     serverProbe.expectNoMessage()
     serverProbe.send(serverConnectionHandler, pongTLV)
     clientProbe.expectNoMessage()
-
+    fail("12345")
   }
 
-  test("send/receive Ping and Pong TLVs over Tor") {
+  it must "send/receive Ping and Pong TLVs over Tor" in { fundedDLCWallet =>
     assume(torProxyEnabled, "Tor daemon is not running or listening port 9050")
     assume(torControlEnabled,
            "Tor daemon is not running or listening port 9051")
@@ -126,7 +135,7 @@ class DLCServerTest extends BitcoinSActorTest {
 
       TestActorRef(
         DLCServer.props(
-          null,
+          fundedDLCWallet.wallet,
           bindAddress,
           Some(boundAddressPromise),
           { (_, _, connectionHandler) =>
@@ -143,7 +152,7 @@ class DLCServerTest extends BitcoinSActorTest {
       val clientProbe = TestProbe()
       val client = TestActorRef(
         DLCClient.props(
-          null,
+          fundedDLCWallet.wallet,
           Some(connectedAddressPromise),
           None,
           { (_, _, connectionHandler) =>
@@ -194,6 +203,8 @@ class DLCServerTest extends BitcoinSActorTest {
       serverProbe.expectNoMessage()
       serverProbe.send(serverConnectionHandler, pongTLV)
       clientProbe.expectNoMessage()
+
+      fail("12345")
     }
   }
 
