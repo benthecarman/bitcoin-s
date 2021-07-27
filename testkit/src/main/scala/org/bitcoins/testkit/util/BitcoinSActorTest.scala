@@ -5,13 +5,12 @@ import akka.testkit.{ImplicitSender, TestKit, TestKitBase}
 import org.bitcoins.testkit.wallet.BitcoinSWalletTest
 import org.scalatest.flatspec.FixtureAsyncFlatSpec
 import org.scalatest.matchers.must.Matchers
-import org.scalatest.{BeforeAndAfterAll, TestSuite}
+import org.scalatest.{BeforeAndAfterAll}
 
 trait BitcoinSActorTest
     extends FixtureAsyncFlatSpec
     with Matchers
     with TestKitBase
-    with TestSuite
     with BeforeAndAfterAll
     with ImplicitSender {
 
