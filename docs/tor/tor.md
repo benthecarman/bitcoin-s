@@ -88,7 +88,7 @@ config, as well as have tor configured for it.
 ### Configuring Tor
 
 You may need to set up the Tor Control Port. On Linux distributions there may be some or all of the following settings
-in `/etc/tor/torrc` for linux or `/opt/homebrew/etc/tor/torcc` for mac, generally commented out by default (if not, add
+in `/etc/tor/torrc` for linux or `/opt/homebrew/etc/tor/torrc` for mac, generally commented out by default (if not, add
 them):
 
 ```
@@ -145,7 +145,7 @@ bitcoin-s {
 Alternatively, you can manually create a tor hidden service.
 
 You can also manually configure your node to be reachable from the Tor network. Add these lines to
-your `/etc/tor/torrc` (or equivalent config file, mac is located at `/opt/homebrew/etc/tor/torcc`):
+your `/etc/tor/torrc` (or equivalent config file, mac is located at `/opt/homebrew/etc/tor/torrc`):
 
 ```
 HiddenServiceDir /var/lib/tor/dlc-service/
