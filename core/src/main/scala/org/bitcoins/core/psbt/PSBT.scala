@@ -424,6 +424,9 @@ case class PSBT(
       case EmptyScriptWitness =>
         throw new IllegalArgumentException(
           s"Invalid scriptWitness given, got: $scriptWitness")
+
+      case _: TaprootWitness =>
+        throw new UnsupportedOperationException(s"Taproot not implemented")
     }
     val newInputMaps = inputMaps.updated(index, newMap)
     PSBT(globalMap, newInputMaps, outputMaps)
@@ -532,6 +535,8 @@ case class PSBT(
       case EmptyScriptWitness =>
         throw new IllegalArgumentException(
           s"Invalid scriptWitness given, got: $scriptWitness")
+      case _: TaprootWitness =>
+        throw new UnsupportedOperationException(s"Taproot not implemented")
     }
 
     val newOutputMaps = outputMaps.updated(index, newMap)
