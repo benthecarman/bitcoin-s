@@ -4,6 +4,7 @@ import org.bitcoins.core.byteVectorOrdering
 import org.bitcoins.core.number.UInt32
 import org.bitcoins.core.protocol.script._
 import org.bitcoins.core.protocol.transaction._
+import org.bitcoins.core.script.constant.OP_TRUE
 import org.bitcoins.core.script.crypto.HashType
 import org.bitcoins.core.util.SeqWrapper
 import org.bitcoins.core.wallet.signer.BitcoinSigner
@@ -607,11 +608,16 @@ case class InputPSBTMap(elements: Vector[InputPSBTRecord])
       case EmptyScriptPubKey =>
         val scriptSig = TrivialTrueScriptSignature
         Success(wipeAndAdd(scriptSig))
-      case _: NonStandardScriptPubKey | _: UnassignedWitnessScriptPubKey |
-          _: WitnessCommitment | _: WitnessScriptPubKeyV1 =>
-        Failure(
-          new UnsupportedOperationException(
-            s"$spkToSatisfy is not yet supported"))
+      case spk @ (_: NonStandardScriptPubKey |
+          _: UnassignedWitnessScriptPubKey | _: WitnessCommitment |
+          _: WitnessScriptPubKeyV1) =>
+        if (spk == ScriptPubKey.fromAsm(Vector(OP_TRUE))) {
+          val scriptSig = TrivialTrueScriptSignature
+          Success(wipeAndAdd(scriptSig))
+        } else
+          Failure(
+            new UnsupportedOperationException(
+              s"$spkToSatisfy is not yet supported"))
     }
   }
 
