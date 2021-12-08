@@ -201,8 +201,11 @@ trait CLightningRpcTestUtil extends Logging {
   def createNodePair(bitcoind: BitcoindRpcClient)(implicit
   system: ActorSystem): Future[(CLightningRpcClient, CLightningRpcClient)] = {
     import system.dispatcher
-    val clientA = CLightningRpcTestClient.fromSbtDownload(Some(bitcoind))
-    val clientB = CLightningRpcTestClient.fromSbtDownload(Some(bitcoind))
+//    val clientA = CLightningRpcTestClient.fromSbtDownload(Some(bitcoind))
+//    val clientB = CLightningRpcTestClient.fromSbtDownload(Some(bitcoind))
+    val path = new File("/home/ben/projects/lightning/lightningd/lightningd")
+    val clientA = CLightningRpcTestClient(path.toPath, Some(bitcoind))
+    val clientB = CLightningRpcTestClient(path.toPath, Some(bitcoind))
 
     val startAF = clientA.start()
     val startBF = clientB.start()

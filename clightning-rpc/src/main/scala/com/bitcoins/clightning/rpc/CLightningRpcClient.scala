@@ -360,7 +360,7 @@ class CLightningRpcClient(val instance: CLightningInstanceLocal, binary: File)(
       .map(f => s"--log-file=${f.getAbsolutePath}")
       .getOrElse("")
 
-    s"$binary --lightning-dir=${instance.datadir.toAbsolutePath} --rpc-file=${instance.rpcFile.getAbsolutePath} $logFileConf"
+    s"$binary --lightning-dir=${instance.datadir.toAbsolutePath} --rpc-file=${instance.rpcFile.getAbsolutePath} $logFileConf --experimental-even-onion-messages"
   }
 
   override def start(): Future[CLightningRpcClient] = {

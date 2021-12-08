@@ -170,7 +170,7 @@ class CLightningClientPairTest extends DualCLightningFixture {
       nodeId <- clightningB.nodeId
       result <- clightningA.sendCustomMessage(
         nodeId,
-        BigSizeUInt(48001),
+        BigSizeUInt(48000),
         hex"000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f")
     } yield {
       assert(result.status.nonEmpty)
