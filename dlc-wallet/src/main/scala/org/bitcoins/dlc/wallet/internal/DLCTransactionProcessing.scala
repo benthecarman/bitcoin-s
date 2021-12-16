@@ -83,19 +83,21 @@ private[bitcoins] trait DLCTransactionProcessing extends TransactionProcessing {
         (_, contractData, offerDb, acceptDb, fundingInputDbs, _) <-
           getDLCFundingData(dlcId)
         txIds = fundingInputDbs.map(_.outPoint.txIdBE)
-        remotePrevTxs <- remoteTxDAO.findByTxIdBEs(txIds)
-        localPrevTxs <- transactionDAO.findByTxIdBEs(txIds)
+
+        remotePrevTxs <- remoteTxDAO
+          .findByTxIdBEs(txIds)
+          .map(_.map(_.transaction))
+        localPrevTxs <- getTransactions(txIds)
+
         (sigDbs, refundSigsDb) <- getCetAndRefundSigs(dlcId)
         (announcements, announcementData, nonceDbs) <- getDLCAnnouncementDbs(
           dlcDb.dlcId)
 
-        cet <-
-          transactionDAO
-            .read(dlcDb.closingTxIdOpt.get)
-            .map(_.get.transaction.asInstanceOf[WitnessTransaction])
+        cet <- getTransaction(dlcDb.closingTxIdOpt.get)
+          .map(_.get.asInstanceOf[WitnessTransaction])
 
         (sig, outcome) = {
-          val prevTxs = (remotePrevTxs ++ localPrevTxs).map(_.transaction)
+          val prevTxs = remotePrevTxs ++ localPrevTxs
           val txs = prevTxs.groupBy(_.txIdBE)
 
           val isInit = dlcDb.isInitiator

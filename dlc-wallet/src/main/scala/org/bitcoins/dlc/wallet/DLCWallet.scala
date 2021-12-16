@@ -23,7 +23,11 @@ import org.bitcoins.core.protocol.script._
 import org.bitcoins.core.protocol.tlv._
 import org.bitcoins.core.protocol.transaction._
 import org.bitcoins.core.util.{FutureUtil, TimeUtil}
-import org.bitcoins.core.wallet.fee.SatoshisPerVirtualByte
+import org.bitcoins.core.wallet.builder.{
+  RawTxBuilderWithFinalizer,
+  ShufflingNonInteractiveFinalizer
+}
+import org.bitcoins.core.wallet.fee.{FeeUnit, SatoshisPerVirtualByte}
 import org.bitcoins.core.wallet.utxo._
 import org.bitcoins.crypto._
 import org.bitcoins.db.SafeDatabase
@@ -247,6 +251,16 @@ abstract class DLCWallet
     }
   }
 
+  // fixme generalize
+  def unreserveOutpoints(
+      outPoints: Vector[TransactionOutPoint]): Future[Unit] = {
+    for {
+      dbs <- spendingInfoDAO.findByOutPoints(outPoints)
+      // allow this to fail in the case they have already been unreserved
+      _ <- unmarkUTXOsAsReserved(dbs).recover { case _: Throwable => () }
+    } yield ()
+  }
+
   /** If the DLC has not reached the Signed state, it can be canceled.
     * Canceling a DLC deletes all data about it from the database,
     * as well as unreserves the utxos associated with it.
@@ -266,12 +280,28 @@ abstract class DLCWallet
       }
 
       inputs <- dlcInputsDAO.findByDLCId(dlcId, dlcDb.isInitiator)
-      dbs <- spendingInfoDAO.findByOutPoints(inputs.map(_.outPoint))
-      // allow this to fail in the case they have already been unreserved
-      _ <- unmarkUTXOsAsReserved(dbs).recover { case _: Throwable => () }
+      _ <- unreserveOutpoints(inputs.map(_.outPoint))
       action = actionBuilder.deleteDLCAction(dlcId)
       _ <- safeDatabase.run(action)
     } yield ()
+  }
+
+  // fixme generalize
+  def selectUTXOs(collateral: CurrencyUnit, feeRate: FeeUnit): Future[(
+      RawTxBuilderWithFinalizer[ShufflingNonInteractiveFinalizer],
+      Vector[ScriptSignatureParams[InputInfo]])] = {
+    for {
+      account <- getDefaultAccountForType(AddressType.SegWit)
+
+      // fixme make sure we reserve utxos
+      (txBuilder, spendingInfos) <- fundRawTransactionInternal(
+        destinations = Vector(TransactionOutput(collateral, EmptyScriptPubKey)),
+        feeRate = feeRate,
+        fromAccount = account,
+        fromTagOpt = None,
+        markAsReserved = true
+      )
+    } yield (txBuilder, spendingInfos)
   }
 
   /** Creates a DLCOffer, if one has already been created
@@ -326,13 +356,7 @@ abstract class DLCWallet
       nextIndex <- getNextAvailableIndex(account, chainType)
       _ <- writeDLCKeysToAddressDb(account, chainType, nextIndex)
 
-      (txBuilder, spendingInfos) <- fundRawTransactionInternal(
-        destinations = Vector(TransactionOutput(collateral, EmptyScriptPubKey)),
-        feeRate = feeRate,
-        fromAccount = account,
-        fromTagOpt = None,
-        markAsReserved = true
-      )
+      (txBuilder, spendingInfos) <- selectUTXOs(collateral, feeRate)
 
       serialIds = DLCMessage.genSerialIds(spendingInfos.size)
       utxos = spendingInfos.zip(serialIds).map { case (utxo, id) =>
@@ -548,6 +572,17 @@ abstract class DLCWallet
     }
   }
 
+  // fixme generalize
+  def getTransactions(
+      txIds: Vector[DoubleSha256DigestBE]): Future[Vector[Transaction]] = {
+    transactionDAO.findByTxIdBEs(txIds).map(_.map(_.transaction))
+  }
+
+  def getTransaction(
+      txId: DoubleSha256DigestBE): Future[Option[Transaction]] = {
+    transactionDAO.findByTxId(txId).map(_.map(_.transaction))
+  }
+
   /** Creates a DLCAccept from the default Segwit account from a given offer, if one has already been
     * created with the given parameters then that one will be returned instead.
     *
@@ -564,15 +599,14 @@ abstract class DLCWallet
     for {
       (dlc, account) <- initDLCForAccept(offer)
       dlcAcceptDbs <- dlcAcceptDAO.findByDLCId(dlcId)
-      dlcAccept <- dlcAcceptDbs.headOption match {
+      dlcAccept <- dlcAcceptDbs match {
         case Some(dlcAcceptDb) =>
           logger.debug(
             s"DLC Accept (${dlcId.hex}) has already been made, returning accept")
           for {
             fundingInputs <-
               dlcInputsDAO.findByDLCId(dlc.dlcId, isInitiator = false)
-            prevTxs <-
-              transactionDAO.findByTxIdBEs(fundingInputs.map(_.outPoint.txIdBE))
+            prevTxs <- getTransactions(fundingInputs.map(_.outPoint.txIdBE))
             outcomeSigsDbs <- dlcSigsDAO.findByDLCId(dlcId)
             refundSigsDb <- dlcRefundSigDAO.read(dlcId)
           } yield {
@@ -591,6 +625,19 @@ abstract class DLCWallet
     } yield dlcAccept
   }
 
+  // fixme generalize
+  def saveSPK(spk: ScriptPubKey): Future[Unit] = {
+    val spkDb = ScriptPubKeyDb(spk)
+    // only update spk db if we don't have it
+    for {
+      spkDbOpt <- scriptPubKeyDAO.findScriptPubKey(spkDb.scriptPubKey)
+      _ <- spkDbOpt match {
+        case Some(_) => Future.unit
+        case None    => scriptPubKeyDAO.create(spkDb)
+      }
+    } yield ()
+  }
+
   private def createNewDLCAccept(
       dlc: DLCDb,
       account: AccountDb,
@@ -599,13 +646,7 @@ abstract class DLCWallet
     logger.info(
       s"Creating DLC Accept for tempContractId ${offer.tempContractId.hex}")
     for {
-      (txBuilder, spendingInfos) <- fundRawTransactionInternal(
-        destinations = Vector(TransactionOutput(collateral, EmptyScriptPubKey)),
-        feeRate = offer.feeRate,
-        fromAccount = account,
-        fromTagOpt = None,
-        markAsReserved = true
-      )
+      (txBuilder, spendingInfos) <- selectUTXOs(collateral, offer.feeRate)
 
       serialIds = DLCMessage.genSerialIds(
         spendingInfos.size,
@@ -659,13 +700,7 @@ abstract class DLCWallet
                            finalAddress = dlcPubKeys.payoutAddress,
                            fundingUtxos = spendingInfos)
 
-      spkDb = ScriptPubKeyDb(builder.fundingSPK)
-      // only update spk db if we don't have it
-      spkDbOpt <- scriptPubKeyDAO.findScriptPubKey(spkDb.scriptPubKey)
-      _ <- spkDbOpt match {
-        case Some(_) => Future.unit
-        case None    => scriptPubKeyDAO.create(spkDb)
-      }
+      _ <- saveSPK(builder.fundingSPK)
 
       _ = logger.info(s"Creating CET Sigs for ${contractId.toHex}")
       cetSigs <- signer.createCETSigsAsync()
@@ -842,8 +877,7 @@ abstract class DLCWallet
           offerDb <- dlcOfferDAO.findByDLCId(dlc.dlcId).map(_.head)
           offerInputs <-
             dlcInputsDAO.findByDLCId(dlc.dlcId, isInitiator = true)
-          prevTxs <-
-            transactionDAO.findByTxIdBEs(offerInputs.map(_.outPoint.txIdBE))
+          prevTxs <- getTransactions(offerInputs.map(_.outPoint.txIdBE))
 
           contractData <- contractDataDAO.read(dlcId).map(_.get)
           (announcements, announcementData, nonceDbs) <- getDLCAnnouncementDbs(
@@ -867,13 +901,7 @@ abstract class DLCWallet
           outPoint = TransactionOutPoint(fundingTx.txId,
                                          UInt32(builder.fundOutputIndex))
 
-          spkDb = ScriptPubKeyDb(builder.fundingSPK)
-          // only update spk db if we don't have it
-          spkDbOpt <- scriptPubKeyDAO.findScriptPubKey(spkDb.scriptPubKey)
-          _ <- spkDbOpt match {
-            case Some(_) => Future.unit
-            case None    => scriptPubKeyDAO.create(spkDb)
-          }
+          _ <- saveSPK(builder.fundingSPK)
 
           updatedDLCDb <- dlcDAO.update(
             dlcDb
@@ -1134,10 +1162,9 @@ abstract class DLCWallet
                              contractInfo)
       fundingTx <-
         if (dlcDb.isInitiator) {
-          transactionDAO.findByTxId(signer.builder.buildFundingTx.txIdBE).map {
-            case Some(txDb) => txDb.transaction
-            case None =>
-              signer.builder.buildFundingTx
+          getTransaction(signer.builder.buildFundingTx.txIdBE).map {
+            case Some(tx) => tx
+            case None     => signer.builder.buildFundingTx
           }
         } else {
           Future.fromTry {
@@ -1250,8 +1277,8 @@ abstract class DLCWallet
       case Some(db) =>
         db.closingTxIdOpt match {
           case Some(txId) =>
-            transactionDAO.findByTxId(txId).flatMap {
-              case Some(tx) => Future.successful(tx.transaction)
+            getTransaction(txId).flatMap {
+              case Some(tx) => Future.successful(tx)
               case None     => createDLCExecutionTx(contractId, oracleSigs)
             }
           case None =>
@@ -1348,9 +1375,9 @@ abstract class DLCWallet
     }
   }
 
-  private def getClosingTxOpt(dlcDb: DLCDb): Future[Option[TransactionDb]] = {
+  private def getClosingTxOpt(dlcDb: DLCDb): Future[Option[Transaction]] = {
     val result =
-      dlcDb.closingTxIdOpt.map(txid => transactionDAO.findByTxId(txid))
+      dlcDb.closingTxIdOpt.map(getTransaction)
     result match {
       case None    => Future.successful(None)
       case Some(r) => r
@@ -1363,7 +1390,7 @@ abstract class DLCWallet
     val contractDataOptF = contractDataDAO.read(dlcId)
     val offerDbOptF = dlcOfferDAO.read(dlcId)
     val acceptDbOptF = dlcAcceptDAO.read(dlcId)
-    val closingTxOptF: Future[Option[TransactionDb]] = for {
+    val closingTxOptF: Future[Option[Transaction]] = for {
       dlcDbOpt <- dlcDbOptF
       closingTxFOpt <- {
         dlcDbOpt.map(dlcDb => getClosingTxOpt(dlcDb)) match {
@@ -1404,7 +1431,7 @@ abstract class DLCWallet
       contractData: DLCContractDataDb,
       offerDb: DLCOfferDb,
       acceptDbOpt: Option[DLCAcceptDb],
-      closingTxOpt: Option[TransactionDb]): Future[Option[DLCStatus]] = {
+      closingTxOpt: Option[Transaction]): Future[Option[DLCStatus]] = {
     val dlcId = dlcDb.dlcId
     val aggregatedF: Future[(
         Vector[DLCAnnouncementDb],
@@ -1449,7 +1476,7 @@ abstract class DLCWallet
                   nonceDbs = nonceDbs,
                   offerDb = offerDb,
                   acceptDb = acceptDb,
-                  closingTx = closingTx.transaction
+                  closingTx = closingTx
                 )
                 Future.successful(status)
               case (None, None) =>

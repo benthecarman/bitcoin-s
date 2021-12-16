@@ -1,7 +1,6 @@
 package org.bitcoins.dlc.wallet.internal
 
 import org.bitcoins.core.api.dlc.wallet.db.DLCDb
-import org.bitcoins.core.api.wallet.db.TransactionDb
 import org.bitcoins.core.hd._
 import org.bitcoins.core.protocol.dlc.build.DLCTxBuilder
 import org.bitcoins.core.protocol.dlc.execution._
@@ -11,6 +10,7 @@ import org.bitcoins.core.protocol.dlc.sign.DLCTxSigner
 import org.bitcoins.core.protocol.dlc.verify.DLCSignatureVerifier
 import org.bitcoins.core.protocol.script._
 import org.bitcoins.core.protocol.tlv._
+import org.bitcoins.core.protocol.transaction.Transaction
 import org.bitcoins.core.util.FutureUtil
 import org.bitcoins.core.util.sorted.{OrderedAnnouncements, OrderedNonces}
 import org.bitcoins.core.wallet.utxo._
@@ -18,7 +18,7 @@ import org.bitcoins.crypto.Sha256Digest
 import org.bitcoins.dlc.wallet.DLCWallet
 import org.bitcoins.dlc.wallet.models._
 import scodec.bits._
-import slick.dbio.{DBIOAction, Effect, NoStream}
+import slick.dbio._
 
 import scala.concurrent._
 
@@ -329,10 +329,8 @@ private[bitcoins] trait DLCDataManagement { self: DLCWallet =>
       scriptSigParams <-
         FutureUtil.foldLeftAsync(Vector.empty[ScriptSignatureParams[InputInfo]],
                                  utxos) { (accum, utxo) =>
-          transactionDAO
-            .findByOutPoint(utxo.outPoint)
-            .map(txOpt =>
-              utxo.toUTXOInfo(keyManager, txOpt.get.transaction) +: accum)
+          getTransaction(utxo.outPoint.txIdBE)
+            .map(txOpt => utxo.toUTXOInfo(keyManager, txOpt.get) +: accum)
         }
     } yield scriptSigParams
   }
@@ -347,8 +345,7 @@ private[bitcoins] trait DLCDataManagement { self: DLCWallet =>
         getDLCOfferData(dlcDb.dlcId)
       localFundingInputs = fundingInputsDb.filter(_.isInitiator)
 
-      prevTxs <-
-        transactionDAO.findByTxIdBEs(localFundingInputs.map(_.outPoint.txIdBE))
+      prevTxs <- getTransactions(localFundingInputs.map(_.outPoint.txIdBE))
     } yield {
       val offerFundingInputs =
         matchPrevTxsWithInputs(localFundingInputs, prevTxs)
@@ -397,7 +394,7 @@ private[bitcoins] trait DLCDataManagement { self: DLCWallet =>
     }
 
     for {
-      localPrevTxs <- transactionDAO.findByTxIdBEs(
+      localPrevTxs <- getTransactions(
         localDbFundingInputs.map(_.outPoint.txIdBE))
       remotePrevTxs <-
         remoteTxDAO.findByTxIdBEs(remoteDbFundingInputs.map(_.outPoint.txIdBE))
@@ -406,9 +403,9 @@ private[bitcoins] trait DLCDataManagement { self: DLCWallet =>
                                                         localDbFundingInputs,
                                                       prevTxs = localPrevTxs)
 
-      val remoteFundingInputs = matchPrevTxsWithInputs(inputs =
-                                                         remoteDbFundingInputs,
-                                                       prevTxs = remotePrevTxs)
+      val remoteFundingInputs = matchPrevTxsWithInputs(
+        inputs = remoteDbFundingInputs,
+        prevTxs = remotePrevTxs.map(_.transaction))
 
       val (offerFundingInputs, acceptFundingInputs) = if (dlcDb.isInitiator) {
         (localFundingInputs, remoteFundingInputs)
@@ -435,10 +432,10 @@ private[bitcoins] trait DLCDataManagement { self: DLCWallet =>
     */
   private[wallet] def matchPrevTxsWithInputs(
       inputs: Vector[DLCFundingInputDb],
-      prevTxs: Vector[TransactionDb]): Vector[DLCFundingInput] = {
+      prevTxs: Vector[Transaction]): Vector[DLCFundingInput] = {
     inputs.sortBy(_.index).map { i =>
       prevTxs.find(_.txId == i.outPoint.txId) match {
-        case Some(txDb) => i.toFundingInput(txDb.transaction)
+        case Some(tx) => i.toFundingInput(tx)
         case None =>
           throw new NoSuchElementException(
             s"Could not find previous transaction with txIdBE=${i.outPoint.txId.flip.hex}")
