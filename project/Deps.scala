@@ -338,6 +338,10 @@ object Deps {
       Test.akkaTestkit
     )
 
+  val tlvNode = List(Compile.grizzledSlf4j)
+
+  val tlvNodeTest = List(Compile.grizzledSlf4j)
+
   val dlcWalletTest =
     List(
       Test.akkaTestkit,

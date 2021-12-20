@@ -222,7 +222,9 @@ lazy val `bitcoin-s` = project
     torTest,
     scripts,
     clightningRpc,
-    clightningRpcTest
+    clightningRpcTest,
+    tlvNode,
+    tlvNodeTest
   )
   .dependsOn(
     secp256k1jni,
@@ -278,7 +280,9 @@ lazy val `bitcoin-s` = project
     torTest,
     scripts,
     clightningRpc,
-    clightningRpcTest
+    clightningRpcTest,
+    tlvNode,
+    tlvNodeTest
   )
   .settings(CommonSettings.settings: _*)
   // unidoc aggregates Scaladocs for all subprojects into one big doc
@@ -746,6 +750,25 @@ lazy val dlcNodeTest = project
     parallelExecution := !isTor
   )
   .dependsOn(coreJVM % testAndCompile, dlcNode, testkit)
+
+lazy val tlvNode = project
+  .in(file("tlv-node"))
+  .settings(CommonSettings.prodSettings: _*)
+  .settings(
+    name := "bitcoin-s-tlv-node",
+    libraryDependencies ++= Deps.tlvNode
+  )
+  .dependsOn(lndRpc)
+// todo add eclair & c-lighting when they have support for custom messages
+
+lazy val tlvNodeTest = project
+  .in(file("tlv-node-test"))
+  .settings(CommonSettings.testSettings: _*)
+  .settings(
+    name := "bitcoin-s-tlv-node",
+    libraryDependencies ++= Deps.tlvNodeTest
+  )
+  .dependsOn(coreJVM % testAndCompile, tlvNode, testkit)
 
 lazy val dlcOracle = project
   .in(file("dlc-oracle"))

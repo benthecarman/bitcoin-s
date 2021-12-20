@@ -18,7 +18,7 @@ import org.bitcoins.core.protocol._
 import org.bitcoins.core.protocol.ln.LnInvoice
 import org.bitcoins.core.protocol.ln.LnTag.PaymentHashTag
 import org.bitcoins.core.protocol.ln.currency.MilliSatoshis
-import org.bitcoins.core.protocol.ln.node.NodeId
+import org.bitcoins.core.protocol.ln.node.{NodeId, NodeUri}
 import org.bitcoins.core.protocol.script._
 import org.bitcoins.core.protocol.tlv._
 import org.bitcoins.core.protocol.transaction.{
@@ -261,6 +261,11 @@ class LndRpcClient(val instance: LndInstance, binaryOpt: Option[File] = None)(
                    utxo.confirmations)
 
       })
+  }
+
+  def connectPeer(nodeUri: NodeUri): Future[Unit] = {
+    val addr = InetSocketAddress.createUnresolved(nodeUri.host, nodeUri.port)
+    connectPeer(nodeUri.nodeId, addr)
   }
 
   def connectPeer(nodeId: NodeId, addr: InetSocketAddress): Future[Unit] = {
