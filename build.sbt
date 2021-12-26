@@ -224,7 +224,9 @@ lazy val `bitcoin-s` = project
     clightningRpc,
     clightningRpcTest,
     tlvNode,
-    tlvNodeTest
+    tlvNodeTest,
+    dlcTLVNode,
+    dlcTLVNodeTest
   )
   .dependsOn(
     secp256k1jni,
@@ -282,7 +284,9 @@ lazy val `bitcoin-s` = project
     clightningRpc,
     clightningRpcTest,
     tlvNode,
-    tlvNodeTest
+    tlvNodeTest,
+    dlcTLVNode,
+    dlcTLVNodeTest
   )
   .settings(CommonSettings.settings: _*)
   // unidoc aggregates Scaladocs for all subprojects into one big doc
@@ -750,6 +754,24 @@ lazy val dlcNodeTest = project
     parallelExecution := !isTor
   )
   .dependsOn(coreJVM % testAndCompile, dlcNode, testkit)
+
+lazy val dlcTLVNode = project
+  .in(file("dlc-tlv-node"))
+  .settings(CommonSettings.prodSettings: _*)
+  .settings(
+    name := "bitcoin-s-dlc-tlv-node",
+    libraryDependencies ++= Deps.dlcTLVNode
+  )
+  .dependsOn(tlvNode)
+
+lazy val dlcTLVNodeTest = project
+  .in(file("dlc-tlv-node-test"))
+  .settings(CommonSettings.testSettings: _*)
+  .settings(
+    name := "bitcoin-s-dlc-tlv-node-test",
+    libraryDependencies ++= Deps.dlcTLVNodeTest
+  )
+  .dependsOn(coreJVM % testAndCompile, tlvNode, testkit)
 
 lazy val tlvNode = project
   .in(file("tlv-node"))

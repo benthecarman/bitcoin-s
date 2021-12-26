@@ -24,7 +24,6 @@ case class TLVNode(
         tlvHandler(nodeId, tlv)
       }
       .runWith(Sink.ignore)
-      .map(_ => ())
 
     Future.unit
   }

@@ -342,6 +342,10 @@ object Deps {
 
   val tlvNodeTest = List(Compile.grizzledSlf4j)
 
+  val dlcTLVNode = List(Compile.grizzledSlf4j)
+
+  val dlcTLVNodeTest = List(Compile.grizzledSlf4j)
+
   val dlcWalletTest =
     List(
       Test.akkaTestkit,
