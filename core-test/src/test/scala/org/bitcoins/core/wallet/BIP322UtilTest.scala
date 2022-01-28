@@ -1,7 +1,9 @@
 package org.bitcoins.core.wallet
 
+import org.bitcoins.core.config.MainNet
 import org.bitcoins.core.crypto.ECPrivateKeyUtil
 import org.bitcoins.core.number._
+import org.bitcoins.core.protocol.BitcoinAddress
 import org.bitcoins.core.protocol.script._
 import org.bitcoins.core.protocol.transaction._
 import org.bitcoins.crypto._
@@ -15,6 +17,15 @@ class BIP322UtilTest extends BitcoinSUnitTest {
   val privKey: ECPrivateKey = ECPrivateKeyUtil
     .fromWIFToPrivateKey("cTsWy7DsaN2uKgVueRHcUKAP3mCNzX5r77GsiLWw9C9zapjiK8tQ")
     .toPrivateKey
+
+  it must "correctly hash messages" in {
+    assert(
+      BIP322Util.hashMessage("") == Sha256Digest(
+        "6e1acf4f6786c3e939571f3e186f45a941208625b78ef293da8fd18327260fff"))
+    assert(
+      BIP322Util.hashMessage("Hello World") == Sha256Digest(
+        "6c5f83704b791f004f0b462ff0b4dd74b4a066facedfe87c12ea3153de5c03d0"))
+  }
 
   it must "create a correct toSpend and toSign transaction with a p2wpkh challenge" in {
     val message = "bip322-test-vector-1"
@@ -202,6 +213,62 @@ class BIP322UtilTest extends BitcoinSUnitTest {
 
         assert(signed == expected)
         assert(signed.bytes.toBase64 == base64)
+    }
+  }
+
+  it must "pass kalle's test vector empty string" in {
+    val privKey: ECPrivateKey = ECPrivateKeyUtil
+      .fromWIFToPrivateKey(
+        "L3VFeEujGtevx9w18HD1fhRbCH67Az2dpCymeRE1SoPK6XQtaN2k")
+      .toPrivateKey
+
+    val spk = P2WPKHWitnessSPKV0(privKey.publicKey)
+    val address = BitcoinAddress.fromScriptPubKey(spk, MainNet)
+    assert(address.value == "bc1q9vza2e8x573nczrlzms0wvx3gsqjx7vavgkx0l")
+
+    val base64 =
+      "AkcwRAIgOi+9FWeR72LaQwZheoopqzQ8apqy2V4J9xtC+WAuMWUCIBxRYlIeSB8B00lzCEwhYIG4oSegnVPWnAmjrBJlNaCQASECx/EgAxlkQpQ9hYjgGu6EBCPMVPwVIVJqO4XCsMvViHI="
+    val expected = ScriptWitness(ByteVector.fromValidBase64(base64))
+
+    val bip322 = BIP322Util.createToSignTransaction("", spk)
+    val signed = bip322.psbt.sign(0, privKey)
+    signed.finalizePSBT match {
+      case Success(finalized) =>
+        val scriptWitnessOpt =
+          finalized.inputMaps.head.finalizedScriptWitnessOpt
+
+        val witnessOpt = scriptWitnessOpt.map(_.scriptWitness)
+        assert(witnessOpt.map(_.bytes.toBase64).contains(base64))
+        assert(witnessOpt.contains(expected))
+      case Failure(exception) => fail(exception)
+    }
+  }
+
+  it must "pass kalle's test vector Hello World" in {
+    val privKey: ECPrivateKey = ECPrivateKeyUtil
+      .fromWIFToPrivateKey(
+        "L3VFeEujGtevx9w18HD1fhRbCH67Az2dpCymeRE1SoPK6XQtaN2k")
+      .toPrivateKey
+
+    val spk = P2WPKHWitnessSPKV0(privKey.publicKey)
+    val address = BitcoinAddress.fromScriptPubKey(spk, MainNet)
+    assert(address.value == "bc1q9vza2e8x573nczrlzms0wvx3gsqjx7vavgkx0l")
+
+    val base64 =
+      "AkcwRAIgOi+9FWeR72LaQwZheoopqzQ8apqy2V4J9xtC+WAuMWUCIBxRYlIeSB8B00lzCEwhYIG4oSegnVPWnAmjrBJlNaCQASECx/EgAxlkQpQ9hYjgGu6EBCPMVPwVIVJqO4XCsMvViHI="
+    val expected = ScriptWitness(ByteVector.fromValidBase64(base64))
+
+    val bip322 = BIP322Util.createToSignTransaction("Hello World", spk)
+    val signed = bip322.psbt.sign(0, privKey)
+    signed.finalizePSBT match {
+      case Success(finalized) =>
+        val scriptWitnessOpt =
+          finalized.inputMaps.head.finalizedScriptWitnessOpt
+
+        val witnessOpt = scriptWitnessOpt.map(_.scriptWitness)
+        assert(witnessOpt.map(_.bytes.toBase64).contains(base64))
+        assert(witnessOpt.contains(expected))
+      case Failure(exception) => fail(exception)
     }
   }
 }

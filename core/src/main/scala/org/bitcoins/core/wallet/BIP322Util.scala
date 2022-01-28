@@ -19,6 +19,10 @@ case class BIP322Transactions(toSpend: Transaction, toSign: Transaction) {
 /** @see https://github.com/bitcoin/bips/blob/master/bip-0322.mediawiki */
 trait BIP322Util {
 
+  def hashMessage(message: String): Sha256Digest = {
+    CryptoUtil.taggedSha256(str = message, tag = "BIP0322-signed-message")
+  }
+
   private def createToSpendTransaction(
       messageHash: Sha256Digest,
       messageChallenge: ScriptPubKey): Transaction = {
@@ -48,7 +52,7 @@ trait BIP322Util {
       lockTime: UInt32 = UInt32.zero,
       additionalInputs: Vector[TransactionInput] =
         Vector.empty): BIP322Transactions = {
-    val messageHash = CryptoUtil.taggedSha256(message, "BIP0322-signed-message")
+    val messageHash = hashMessage(message)
     val toSpend = createToSpendTransaction(messageHash, messageChallenge)
 
     val outPoint = TransactionOutPoint(toSpend.txId, UInt32.zero)
