@@ -8,6 +8,7 @@ import org.bitcoins.core.psbt.PSBT
 import org.bitcoins.core.script.constant._
 import org.bitcoins.core.script.control.OP_RETURN
 import org.bitcoins.crypto._
+import scodec.bits.ByteVector
 
 case class BIP322Transactions(toSpend: Transaction, toSign: Transaction) {
 
@@ -20,7 +21,7 @@ case class BIP322Transactions(toSpend: Transaction, toSign: Transaction) {
 trait BIP322Util {
 
   def hashMessage(message: String): Sha256Digest = {
-    CryptoUtil.taggedSha256(str = message, tag = "BIP0322-signed-message")
+    CryptoUtil.bip322Hash(ByteVector(message.getBytes))
   }
 
   private def createToSpendTransaction(

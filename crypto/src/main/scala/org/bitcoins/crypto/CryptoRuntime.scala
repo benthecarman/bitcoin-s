@@ -134,6 +134,16 @@ trait CryptoRuntime {
     sha256(dlcAnnouncementTagBytes ++ bytes)
   }
 
+  // the tag "BIP0322-signed-message"
+  private val bip322TagBytes = {
+    ByteVector.fromValidHex(
+      "746584a1872fa10041554effa038d6124942dd79b4e58a4cda184e13dbe62c49746584a1872fa10041554effa038d6124942dd79b4e58a4cda184e13dbe62c49")
+  }
+
+  def bip322Hash(bytes: ByteVector): Sha256Digest = {
+    sha256(bip322TagBytes ++ bytes)
+  }
+
   /** Recover public keys from a signature and the message that was signed. This method will return 2 public keys, and the signature
     * can be verified with both, but only one of them matches that private key that was used to generate the signature.
     *
