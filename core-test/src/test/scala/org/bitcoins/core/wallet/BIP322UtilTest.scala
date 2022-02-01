@@ -21,10 +21,10 @@ class BIP322UtilTest extends BitcoinSUnitTest {
   it must "correctly hash messages" in {
     assert(
       BIP322Util.hashMessage("") == Sha256Digest(
-        "6e1acf4f6786c3e939571f3e186f45a941208625b78ef293da8fd18327260fff"))
+        "c90c269c4f8fcbe6880f72a721ddfbf1914268a794cbb21cfafee13770ae19f1"))
     assert(
       BIP322Util.hashMessage("Hello World") == Sha256Digest(
-        "6c5f83704b791f004f0b462ff0b4dd74b4a066facedfe87c12ea3153de5c03d0"))
+        "f0eb03b1a75ac6d9847f55c624a99169b5dccba2a31f5b23bea77ba270de0a7a"))
   }
 
   it must "create a correct toSpend and toSign transaction with a p2wpkh challenge" in {
@@ -227,7 +227,7 @@ class BIP322UtilTest extends BitcoinSUnitTest {
     assert(address.value == "bc1q9vza2e8x573nczrlzms0wvx3gsqjx7vavgkx0l")
 
     val base64 =
-      "AkcwRAIgOi+9FWeR72LaQwZheoopqzQ8apqy2V4J9xtC+WAuMWUCIBxRYlIeSB8B00lzCEwhYIG4oSegnVPWnAmjrBJlNaCQASECx/EgAxlkQpQ9hYjgGu6EBCPMVPwVIVJqO4XCsMvViHI="
+      "AkcwRAIgFuS8y5m0ym9Gj2odoVB5NIL+cPYkeEj8LL1N/6P58X8CIA6jJ9QH2iYKRXVfmhsDzHq1bMS4Adj0nb8DDSdN/SpBASECx/EgAxlkQpQ9hYjgGu6EBCPMVPwVIVJqO4XCsMvViHI="
     val expected = ScriptWitness(ByteVector.fromValidBase64(base64))
 
     val bip322 = BIP322Util.createToSignTransaction("", spk)
@@ -255,7 +255,7 @@ class BIP322UtilTest extends BitcoinSUnitTest {
     assert(address.value == "bc1q9vza2e8x573nczrlzms0wvx3gsqjx7vavgkx0l")
 
     val base64 =
-      "AkcwRAIgOi+9FWeR72LaQwZheoopqzQ8apqy2V4J9xtC+WAuMWUCIBxRYlIeSB8B00lzCEwhYIG4oSegnVPWnAmjrBJlNaCQASECx/EgAxlkQpQ9hYjgGu6EBCPMVPwVIVJqO4XCsMvViHI="
+      "AkcwRAIgG3PASL/vRTgAqogWT6S8rUOQXNnfRzX6JncmbFlHc1ACIGQdsW+rnVmsQzyAYRQisHKFMigDmKiL7LUw4x17Fw5tASECx/EgAxlkQpQ9hYjgGu6EBCPMVPwVIVJqO4XCsMvViHI="
     val expected = ScriptWitness(ByteVector.fromValidBase64(base64))
 
     val bip322 = BIP322Util.createToSignTransaction("Hello World", spk)
