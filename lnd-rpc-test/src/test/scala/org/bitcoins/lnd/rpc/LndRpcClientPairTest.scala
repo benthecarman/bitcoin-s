@@ -197,7 +197,7 @@ class LndRpcClientPairTest extends DualLndFixture {
 
       assert(details.tx == tx)
       assert(details.txId == tx.txIdBE)
-      assert(details.destAddresses.contains(addr))
+      assert(details.outputDetails.map(_.address).contains(addr))
       assert(details.amount == sendAmt)
     }
   }

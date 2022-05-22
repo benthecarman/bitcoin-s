@@ -899,29 +899,7 @@ class LndRpcClient(val instance: LndInstance, binaryOpt: Option[File] = None)(
 
     lnd
       .getTransactions(request)
-      .map {
-        _.transactions.map { details =>
-          val blockHashOpt = if (details.blockHash.isEmpty) {
-            None
-          } else Some(DoubleSha256DigestBE(details.blockHash))
-
-          val addrs =
-            details.destAddresses.map(BitcoinAddress.fromString).toVector
-
-          TxDetails(
-            txId = DoubleSha256DigestBE(details.txHash),
-            amount = Satoshis(details.amount),
-            numConfirmations = details.numConfirmations,
-            blockHashOpt = blockHashOpt,
-            blockHeight = details.blockHeight,
-            timeStamp = details.timeStamp,
-            totalFees = Satoshis(details.totalFees),
-            destAddresses = addrs,
-            tx = Tx(details.rawTxHex),
-            label = details.label
-          )
-        }.toVector
-      }
+      .map(_.transactions.toVector.map(LndTransactionToTxDetails))
   }
 
   def monitorInvoice(
@@ -1037,7 +1015,7 @@ object LndRpcClient {
     hex"8c45ee0b90e3afd0fb4d6f39afa3c5d551ee5f2c7ac2d06820ed3d16582186d2"
 
   /** The current version we support of Lnd */
-  private[bitcoins] val version = "v0.14.3-beta"
+  private[bitcoins] val version = "v0.15.0-beta.rc6"
 
   /** Key used for adding the macaroon to the gRPC header */
   private[lnd] val macaroonKey = "macaroon"
