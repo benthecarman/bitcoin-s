@@ -2,21 +2,17 @@ package org.bitcoins.testkit.lnd
 
 import akka.actor.ActorSystem
 import grizzled.slf4j.Logging
+import lnrpc.{ChanInfoRequest, ListChannelsRequest}
 import org.bitcoins.asyncutil.AsyncUtil
 import org.bitcoins.core.currency.{Bitcoins, CurrencyUnit, Satoshis}
-import org.bitcoins.core.number.UInt32
+import org.bitcoins.core.number._
 import org.bitcoins.core.protocol.ln.node.NodeId
 import org.bitcoins.core.protocol.transaction.TransactionOutPoint
 import org.bitcoins.core.wallet.fee.SatoshisPerVirtualByte
-import org.bitcoins.lnd.rpc.LndRpcClient
+import org.bitcoins.lnd.rpc.{LndRpcClient, LndUtils}
 import org.bitcoins.lnd.rpc.config.{LndInstanceLocal, LndInstanceRemote}
 import org.bitcoins.rpc.client.common.{BitcoindRpcClient, BitcoindVersion}
-import org.bitcoins.rpc.config.{
-  BitcoindAuthCredentials,
-  BitcoindInstance,
-  BitcoindInstanceLocal,
-  ZmqConfig
-}
+import org.bitcoins.rpc.config._
 import org.bitcoins.rpc.util.RpcUtil
 import org.bitcoins.testkit.async.TestAsyncUtil
 import org.bitcoins.testkit.rpc.BitcoindRpcTestUtil
@@ -26,10 +22,10 @@ import java.io.{File, PrintWriter}
 import java.net.{InetSocketAddress, URI}
 import java.nio.file.Path
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent._
 import scala.util.Properties
 
-trait LndRpcTestUtil extends Logging {
+trait LndRpcTestUtil extends Logging with LndUtils {
 
   val sbtBinaryDirectory: Path =
     TestkitBinaries.baseBinaryDirectory.resolve("lnd")
@@ -73,7 +69,9 @@ trait LndRpcTestUtil extends Logging {
        |bitcoin.regtest = true
        |bitcoin.node = bitcoind
        |norest=true
-       |debuglevel=critical
+       |historicalsyncinterval=1s
+       |trickledelay=1000
+       |debuglevel=debug
        |listen=127.0.0.1:$port
        |rpclisten=127.0.0.1:$rpcPort
        |externalip=127.0.0.1
@@ -257,6 +255,86 @@ trait LndRpcTestUtil extends Logging {
     } yield (client, otherClient)
   }
 
+  /** Creates three Lnd nodes that are connected together and returns their
+    * respective [[org.bitcoins.lnd.rpc.LndRpcClient LndRpcClient]]s
+    */
+  def createNodeTriple(bitcoind: BitcoindRpcClient)(implicit
+  system: ActorSystem): Future[(LndRpcClient, LndRpcClient, LndRpcClient)] = {
+    import system.dispatcher
+
+    val actorSystemA =
+      ActorSystem.create("bitcoin-s-lnd-test-" + FileUtil.randomDirName)
+    val clientA = LndRpcTestClient
+      .fromSbtDownload(Some(bitcoind))(actorSystemA)
+
+    val actorSystemB =
+      ActorSystem.create("bitcoin-s-lnd-test-" + FileUtil.randomDirName)
+    val clientB = LndRpcTestClient
+      .fromSbtDownload(Some(bitcoind))(actorSystemB)
+
+    val actorSystemC =
+      ActorSystem.create("bitcoin-s-lnd-test-" + FileUtil.randomDirName)
+    val clientC = LndRpcTestClient
+      .fromSbtDownload(Some(bitcoind))(actorSystemC)
+
+    val clientsF = for {
+      a <- clientA.start()
+      b <- clientB.start()
+      c <- clientC.start()
+    } yield (a, b, c)
+
+    def isSynced: Future[Boolean] = for {
+      (clientA, clientB, clientC) <- clientsF
+
+      infoA <- clientA.getInfo
+      infoB <- clientB.getInfo
+      infoC <- clientC.getInfo
+    } yield infoA.syncedToChain && infoB.syncedToChain && infoC.syncedToChain
+
+    def knowsChannel: Future[Boolean] = for {
+      (clientA, _, clientC) <- clientsF
+      chan <- clientA.listChannels(ListChannelsRequest()).map(_.head)
+      opt <- clientC.lnd.getChanInfo(ChanInfoRequest(chan.chanId))
+      chan <- clientC.listChannels(ListChannelsRequest()).map(_.head)
+      opt2 <- clientA.lnd.getChanInfo(ChanInfoRequest(chan.chanId))
+    } yield opt.channelId > UInt64.zero && opt2.channelId > UInt64.zero
+
+    def isFunded: Future[Boolean] = for {
+      (clientA, clientB, clientC) <- clientsF
+
+      balA <- clientA.walletBalance()
+      balB <- clientB.walletBalance()
+      balC <- clientC.walletBalance()
+    } yield {
+      balA.confirmedBalance > Satoshis.zero &&
+      balB.confirmedBalance > Satoshis.zero &&
+      balC.confirmedBalance > Satoshis.zero
+    }
+
+    for {
+      (clientA, clientB, clientC) <- clientsF
+
+      _ <- connectLNNodes(clientA, clientB)
+      _ <- connectLNNodes(clientB, clientC)
+      _ <- connectLNNodes(clientA, clientC)
+
+      _ <- fundLNNodes(bitcoind, clientA, clientA)
+      _ <- fundLNNodes(bitcoind, clientB, clientB)
+      _ <- fundLNNodes(bitcoind, clientC, clientC)
+
+      _ <- AsyncUtil.awaitConditionF(() => isSynced)
+      _ <- AsyncUtil.awaitConditionF(() => isFunded)
+
+      _ <- openChannel(bitcoind, clientA, clientB)
+      _ <- openChannel(bitcoind, clientB, clientC)
+      _ <- TestAsyncUtil.awaitConditionF(() => isSynced)
+      _ <- TestAsyncUtil.awaitConditionF(() => knowsChannel.recover(_ => false),
+                                         1.seconds,
+                                         50)
+      _ <- TestAsyncUtil.nonBlockingSleep(10.seconds)
+    } yield (clientA, clientB, clientC)
+  }
+
   private val DEFAULT_CHANNEL_AMT = Satoshis(500000L)
 
   /** Opens a channel from n1 -> n2 */
@@ -277,8 +355,7 @@ trait LndRpcTestUtil extends Logging {
 
     val fundedChannelIdF =
       nodeIdsF.flatMap { case (nodeId1, nodeId2) =>
-        logger.debug(
-          s"Opening a channel from $nodeId1 -> $nodeId2 with amount $amt")
+        println(s"Opening a channel from $nodeId1 -> $nodeId2 with amount $amt")
         n1.openChannel(nodeId = nodeId2,
                        fundingAmount = amt,
                        pushAmt = pushAmt,

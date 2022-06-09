@@ -66,6 +66,32 @@ trait DualLndFixture extends BitcoinSFixture with CachedBitcoindV21 {
   }
 }
 
+trait TripleLndFixture extends BitcoinSFixture with CachedBitcoindV21 {
+
+  override type FixtureParam =
+    (BitcoindRpcClient, LndRpcClient, LndRpcClient, LndRpcClient)
+
+  override def withFixture(test: OneArgAsyncTest): FutureOutcome = {
+    makeDependentFixture[FixtureParam](
+      () => {
+        for {
+          bitcoind <- cachedBitcoindWithFundsF
+          _ = logger.debug("creating lnds")
+          lnds <- LndRpcTestUtil.createNodeTriple(bitcoind)
+        } yield (bitcoind, lnds._1, lnds._2, lnds._3)
+      },
+      { param =>
+        val (_, lndA, lndB, lndC) = param
+        for {
+          _ <- lndA.stop()
+          _ <- lndB.stop()
+          _ <- lndC.stop()
+        } yield ()
+      }
+    )(test)
+  }
+}
+
 trait RemoteLndFixture extends BitcoinSFixture with CachedBitcoindV21 {
 
   override type FixtureParam = LndRpcClient

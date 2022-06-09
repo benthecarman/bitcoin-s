@@ -1,5 +1,7 @@
 package org.bitcoins.lnd.rpc.internal
 
+import akka.stream.{OverflowStrategy, QueueOfferResult}
+import akka.stream.scaladsl._
 import lnrpc.Failure.FailureCode.INCORRECT_OR_UNKNOWN_PAYMENT_DETAILS
 import lnrpc.{
   HTLCAttempt,
@@ -12,9 +14,9 @@ import lnrpc.{
 }
 import org.bitcoins.core.currency._
 import org.bitcoins.core.number._
-import org.bitcoins.core.protocol.ln.{LnInvoice, PaymentSecret}
 import org.bitcoins.core.protocol.ln.node.NodeId
 import org.bitcoins.core.protocol.ln.routing.LnRoute
+import org.bitcoins.core.protocol.ln.{LnInvoice, PaymentSecret}
 import org.bitcoins.core.util.FutureUtil
 import org.bitcoins.crypto._
 import org.bitcoins.lnd.rpc.LndRpcClient
@@ -23,6 +25,39 @@ import routerrpc._
 import scala.concurrent.Future
 
 trait LndRouterClient { self: LndRpcClient =>
+
+  val (queue, source) =
+    Source
+      .queue[ForwardHtlcInterceptResponse](200, OverflowStrategy.dropHead)
+      .toMat(BroadcastHub.sink)(Keep.both)
+      .run()
+
+  def startHTLCInterceptor(): Future[ForwardHtlcInterceptResponse] = {
+    router
+      .htlcInterceptor(source)
+      .mapAsyncUnordered(1) { r =>
+        println("HERE")
+        println(r)
+        val resp = ForwardHtlcInterceptResponse(r.incomingCircuitKey,
+                                                ResolveHoldForwardAction.RESUME)
+
+        queue.offer(resp).map {
+          case QueueOfferResult.Enqueued =>
+            println(s"enqueued $resp")
+            resp
+          case QueueOfferResult.Dropped =>
+            println(s"dropped $resp")
+            resp
+          case QueueOfferResult.Failure(ex) =>
+            println(s"Offer failed ${ex.getMessage}")
+            resp
+          case QueueOfferResult.QueueClosed =>
+            println("Source Queue closed")
+            resp
+        }
+      }
+      .runWith(Sink.head)
+  }
 
   def queryRoutes(
       amount: CurrencyUnit,

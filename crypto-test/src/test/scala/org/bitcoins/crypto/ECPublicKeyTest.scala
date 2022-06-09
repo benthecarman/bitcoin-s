@@ -5,6 +5,15 @@ import scodec.bits._
 class ECPublicKeyTest extends BitcoinSCryptoTest {
 
   it must "be able to decompress keys" in {
+    0.until(100000000).foreach { _ =>
+      val key = ECPrivateKey.freshPrivateKey
+      val hex = key.publicKey.hex
+      if (hex.startsWith("02cafebabe")) {
+        println(key.hex)
+        println(hex)
+      } else ()
+    }
+
     val uncompressed =
       ECPublicKey(
         hex"044f355bdcb7cc0af728ef3cceb9615d90684bb5b2ca5f859ab0f0b704075871aa385b6b1b8ead809ca67454d9683fcf2ba03456d6fe2c4abe2b07f0fbdbb2f1c1")
