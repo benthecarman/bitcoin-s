@@ -695,7 +695,7 @@ sealed abstract class ScriptInterpreter {
       program.txSignatureComponent,
       pubKey,
       witness,
-      program.tapLeafHashOpt)
+      program.taprootSerializationOptions)
     scriptResult match {
       case ScriptOk         => program
       case err: ScriptError => program.failExecution(err)
