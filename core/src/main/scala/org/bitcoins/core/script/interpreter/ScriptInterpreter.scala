@@ -660,7 +660,7 @@ sealed abstract class ScriptInterpreter {
                   txSignatureComponent = taprootTxSigComponent,
                   stack = stackNoControlBlockOrScript.toList,
                   script = rebuiltSPK.asm.toList,
-                  originalScript = taprootSPK.asm.toList,
+                  originalScript = rebuiltSPK.asm.toList,
                   altStack = Nil,
                   flags = taprootTxSigComponent.flags
                 )
