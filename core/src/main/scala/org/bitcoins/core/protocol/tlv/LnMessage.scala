@@ -44,7 +44,8 @@ object LnMessage extends Factory[LnMessage[TLV]] {
       case _: DLCSetupTLV | _: DLCSetupPieceTLV | _: InitTLV | _: DLCOracleTLV |
           _: ErrorTLV | _: PingTLV | _: PongTLV | _: ContractInfoV0TLV |
           _: ContractInfoV1TLV | _: PayoutCurvePieceTLV | _: AmtToForwardTLV |
-          _: OutgoingCLTVValueTLV | _: ShortChannelIdTLV | _: PaymentDataTLV =>
+          _: OutgoingCLTVValueTLV | _: ShortChannelIdTLV | _: PaymentDataTLV |
+          _: TrampolineOnionPacketTLV | _: OutgoingNodeIdTLV =>
         ()
     }
 

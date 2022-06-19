@@ -6,6 +6,7 @@ import org.bitcoins.core.number.{UInt32, UInt64}
 import org.bitcoins.core.protocol.dlc.build.DLCTxBuilder
 import org.bitcoins.core.protocol.dlc.models.DLCMessage.{DLCAccept, DLCOffer}
 import org.bitcoins.core.protocol.dlc.models._
+import org.bitcoins.core.protocol.ln.node.NodeId
 import org.bitcoins.core.protocol.tlv._
 import org.bitcoins.core.protocol.transaction._
 import org.bitcoins.core.protocol.{BigSizeUInt, BlockTimeStamp}
@@ -67,6 +68,28 @@ trait TLVGen {
       uint32 <- NumberGenerator.uInt32s
     } yield {
       OutgoingCLTVValueTLV(uint32)
+    }
+  }
+
+  def outgoingNodeIdTLV: Gen[OutgoingNodeIdTLV] = {
+    for {
+      pubkey <- CryptoGenerators.publicKey
+    } yield {
+      OutgoingNodeIdTLV(NodeId(pubkey))
+    }
+  }
+
+  def trampolineOnionPacketTLV: Gen[TrampolineOnionPacketTLV] = {
+    for {
+      version <- NumberGenerator.byte
+      pubkey <- CryptoGenerators.publicKey
+      payloads <- NumberGenerator.bytevector
+      hmac <- NumberGenerator.bytevector(32)
+    } yield {
+      TrampolineOnionPacketTLV(version = version,
+                               point = pubkey,
+                               hopPayloads = payloads,
+                               hmac = hmac)
     }
   }
 
@@ -604,6 +627,8 @@ trait TLVGen {
       pongTLV,
       amtToForwardTLV,
       outgoingCLTVValueTLV,
+      outgoingNodeIdTLV,
+      trampolineOnionPacketTLV,
       shortChannelIdTLV,
       paymentDataTLV,
       oracleEventV0TLV,

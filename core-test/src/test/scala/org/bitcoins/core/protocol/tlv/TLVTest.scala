@@ -61,6 +61,20 @@ class TLVTest extends BitcoinSUnitTest {
     }
   }
 
+  "OutgoingNodeIdTLV" must "have serialization symmetry" in {
+    forAll(TLVGen.outgoingNodeIdTLV) { tlv =>
+      assert(OutgoingNodeIdTLV(tlv.bytes) == tlv)
+      assert(TLV(tlv.bytes) == tlv)
+    }
+  }
+
+  "TrampolineOnionPacketTLV" must "have serialization symmetry" in {
+    forAll(TLVGen.trampolineOnionPacketTLV) { tlv =>
+      assert(TrampolineOnionPacketTLV(tlv.bytes) == tlv)
+      assert(TLV(tlv.bytes) == tlv)
+    }
+  }
+
   "ShortChannelIdTLV" must "have serialization symmetry" in {
     forAll(TLVGen.shortChannelIdTLV) { tlv =>
       assert(ShortChannelIdTLV(tlv.bytes) == tlv)

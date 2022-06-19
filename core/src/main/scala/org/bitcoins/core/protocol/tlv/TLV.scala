@@ -12,6 +12,7 @@ import org.bitcoins.core.protocol.dlc.models.{
 import org.bitcoins.core.protocol.ln.PaymentSecret
 import org.bitcoins.core.protocol.ln.channel.ShortChannelId
 import org.bitcoins.core.protocol.ln.currency.MilliSatoshis
+import org.bitcoins.core.protocol.ln.node.NodeId
 import org.bitcoins.core.protocol.script._
 import org.bitcoins.core.protocol.tlv.TLV.{
   DecodeTLVResult,
@@ -168,6 +169,8 @@ object TLV extends TLVParentFactory[TLV] {
       ErrorTLV,
       AmtToForwardTLV,
       OutgoingCLTVValueTLV,
+      OutgoingNodeIdTLV,
+      TrampolineOnionPacketTLV,
       ShortChannelIdTLV,
       PaymentDataTLV,
       PingTLV,
@@ -345,6 +348,58 @@ object OutgoingCLTVValueTLV extends TLVFactory[OutgoingCLTVValueTLV] {
   }
 
   override val typeName: String = "OutgoingCLTVValueTLV"
+}
+
+case class OutgoingNodeIdTLV(nodeId: NodeId) extends TLV {
+  override val tpe: BigSizeUInt = OutgoingNodeIdTLV.tpe
+
+  override val value: ByteVector = {
+    nodeId.bytes
+  }
+}
+
+object OutgoingNodeIdTLV extends TLVFactory[OutgoingNodeIdTLV] {
+  override val tpe: BigSizeUInt = BigSizeUInt(65547) // 10
+
+  override def fromTLVValue(value: ByteVector): OutgoingNodeIdTLV = {
+    val iter = ValueIterator(value)
+
+    val nodeId = NodeId(iter.take(33))
+
+    OutgoingNodeIdTLV(nodeId)
+  }
+
+  override val typeName: String = "OutgoingNodeIdTLV"
+}
+
+case class TrampolineOnionPacketTLV(
+    version: Byte,
+    point: ECPublicKey,
+    hopPayloads: ByteVector,
+    hmac: ByteVector)
+    extends TLV {
+  override val tpe: BigSizeUInt = TrampolineOnionPacketTLV.tpe
+
+  override val value: ByteVector = {
+    ByteVector.fromByte(version) ++ point.bytes ++ hopPayloads ++ hmac
+  }
+}
+
+object TrampolineOnionPacketTLV extends TLVFactory[TrampolineOnionPacketTLV] {
+  override val tpe: BigSizeUInt = BigSizeUInt(65545) // 12
+
+  override def fromTLVValue(value: ByteVector): TrampolineOnionPacketTLV = {
+    val iter = ValueIterator(value)
+
+    val version = iter.take(1).head
+    val pubkey = ECPublicKey(iter.take(33))
+    val remaining = iter.current
+    val (payloads, hmac) = remaining.splitAt(remaining.length - 32)
+
+    TrampolineOnionPacketTLV(version, pubkey, payloads, hmac)
+  }
+
+  override val typeName: String = "TrampolineOnionPacketTLV"
 }
 
 case class ShortChannelIdTLV(scid: ShortChannelId) extends TLV {
