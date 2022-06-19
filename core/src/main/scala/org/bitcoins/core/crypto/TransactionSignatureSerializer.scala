@@ -284,6 +284,7 @@ sealed abstract class TransactionSignatureSerializer {
             b.bytes
           }
         }
+        println(s"spentSPKs=${spentSPKs.toHex}")
         val sequenceHash: ByteVector =
           if (isNotAnyoneCanPay) {
             val sequences = spendingTransaction.inputs.map(_.sequence)
@@ -344,6 +345,7 @@ sealed abstract class TransactionSignatureSerializer {
         } else {
           ByteVector.empty
         }
+
         val result = {
           if (isNotAnyoneCanPay) {
             if (!isNotSigHashSingle) {
