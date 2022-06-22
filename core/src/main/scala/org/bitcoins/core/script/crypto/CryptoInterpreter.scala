@@ -184,7 +184,6 @@ sealed abstract class CryptoInterpreter {
       program: ExecutionInProgressScriptProgram): Either[
     ScriptError,
     TransactionSignatureCheckerResult] = {
-    println(s"program.opCodeSeparator=${program.lastCodeSeparator}")
     val stack = program.stack
     val pubKeyBytes = stack.head.bytes
     val isCheckSigAdd = program.script.head == OP_CHECKSIGADD
@@ -287,11 +286,8 @@ sealed abstract class CryptoInterpreter {
     require(program.script.headOption.contains(OP_CODESEPARATOR),
             "Script top must be OP_CODESEPARATOR")
 
-    val originalOps =
-      BitcoinScriptUtil.countOpCodes(program.originalScript.toVector)
-    val currentOps = BitcoinScriptUtil.countOpCodes(program.script.toVector)
-    val indexOfOpCodeSeparator = originalOps - currentOps
-
+    val indexOfOpCodeSeparator =
+      program.originalScript.size - program.script.size
     program
       .updateScript(program.script.tail)
       .updateLastCodeSeparator(indexOfOpCodeSeparator)
