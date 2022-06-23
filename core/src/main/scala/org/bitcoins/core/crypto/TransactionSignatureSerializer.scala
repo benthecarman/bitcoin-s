@@ -77,7 +77,7 @@ sealed abstract class TransactionSignatureSerializer {
       sigVersion: SignatureVersion,
       taprootOptions: TaprootSerializationOptions): ByteVector = {
     val keyVersion: Byte = 0.toByte
-
+    println(s"hashtype=$hashType")
     sigVersion match {
       case SigVersionBase =>
         require(
@@ -319,6 +319,7 @@ sealed abstract class TransactionSignatureSerializer {
           } else ByteVector.empty
 
         val haveAnnex: Boolean = taprootOptions.haveAnnex
+        println(s"haveAnnex=$haveAnnex annexOpt=${taprootOptions.annexHashOpt}")
         val annexByte = if (haveAnnex) 1.toByte else 0.toByte
 
         val spendType: Byte = ((extFlag << 1) + annexByte).toByte
