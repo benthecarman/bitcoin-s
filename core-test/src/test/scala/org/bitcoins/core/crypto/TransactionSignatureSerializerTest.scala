@@ -887,7 +887,7 @@ class TransactionSignatureSerializerTest extends BitcoinSUnitTest {
 
     val taprootTxSigComponent =
       WitnessTxSigComponentRaw(witnessTx,
-                               inputIndex,
+                              inputIndex,
                                prevout,
                                Policy.standardFlags)
 
@@ -895,6 +895,7 @@ class TransactionSignatureSerializerTest extends BitcoinSUnitTest {
       TaprootSerializationOptions.empty
     val serialize = TransactionSignatureSerializer.serializeForSignature(
       taprootTxSigComponent,
+<<<<<<< HEAD
       hashType,
       taprootOptions)
 
@@ -1031,7 +1032,7 @@ class TransactionSignatureSerializerTest extends BitcoinSUnitTest {
       TaprootSerializationOptions(Some(leafHash), None, Some(UInt32(6)))
     val serialize = TransactionSignatureSerializer.serializeForSignature(
       taprootTxSigComponent,
-      HashType.sigHashSingleAnyoneCanPay,
+     HashType.sigHashSingleAnyoneCanPay,
       taprootOptions)
 
     assert(serialize.toHex == expected)
