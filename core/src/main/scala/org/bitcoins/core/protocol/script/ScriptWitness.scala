@@ -181,11 +181,6 @@ object ScriptWitness extends Factory[ScriptWitness] {
     }
     if (stack.isEmpty) {
       EmptyScriptWitness
-    } else if (TaprootKeyPath.isValid(stack.toVector)) {
-      //taproot key path spend
-      TaprootKeyPath.fromStack(stack.toVector)
-    } else if (TaprootScriptPath.isValid(stack.toVector)) {
-      TaprootScriptPath.fromStack(stack.toVector)
     } else if (isPubKey && stack.size == 2) {
       val pubKey = ECPublicKeyBytes(stack.head)
       val sig = ECDigitalSignature(stack(1))
@@ -193,6 +188,11 @@ object ScriptWitness extends Factory[ScriptWitness] {
     } else if (isPubKey && stack.size == 1) {
       val pubKey = ECPublicKeyBytes(stack.head)
       P2WPKHWitnessV0(pubKey)
+    } else if (TaprootKeyPath.isValid(stack.toVector)) {
+      //taproot key path spend
+      TaprootKeyPath.fromStack(stack.toVector)
+    } else if (TaprootScriptPath.isValid(stack.toVector)) {
+      TaprootScriptPath.fromStack(stack.toVector)
     } else {
       //wont match a Vector if I don't convert to list
       val s = stack.toList
