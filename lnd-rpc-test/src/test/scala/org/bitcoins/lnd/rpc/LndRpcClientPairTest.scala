@@ -18,6 +18,7 @@ import org.bitcoins.core.wallet.fee.{SatoshisPerKW, SatoshisPerVirtualByte}
 import org.bitcoins.crypto._
 import org.bitcoins.testkit.fixtures.DualLndFixture
 import scodec.bits.HexStringSyntax
+import signrpc.SignMethod
 
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
@@ -134,6 +135,45 @@ class LndRpcClientPairTest extends DualLndFixture {
         case Failure(exception) => fail(exception)
       }
     }
+  }
+
+  it must "sign a taproot transaction" in { param =>
+    val (bitcoind, lnd, _) = param
+
+    for {
+      bitcoindAddr <- bitcoind.getNewAddress
+      utxo <- lnd.listUnspent.map(_.head)
+      prevOut = TransactionOutput(utxo.amount, utxo.spk)
+
+      input = TransactionInput(utxo.outPointOpt.get,
+                               EmptyScriptSignature,
+                               TransactionConstants.sequence)
+      output = TransactionOutput(utxo.amount - Satoshis(1000),
+                                 bitcoindAddr.scriptPubKey)
+
+      unsigned = BaseTransaction(Int32.two,
+                                 Vector(input),
+                                 Vector(output),
+                                 UInt32.zero)
+
+      (scriptSig, wit) <- lnd.computeInputScript(
+        tx = unsigned,
+        inputIdx = 0,
+        hashType = HashType.sigHashAll,
+        output = prevOut,
+        signMethod = SignMethod.SIGN_METHOD_TAPROOT_KEY_SPEND_BIP0086,
+        prevOuts = Vector(prevOut)
+      )
+
+      psbt = PSBT
+        .fromUnsignedTx(unsigned)
+        .addWitnessUTXOToInput(prevOut, 0)
+        .addFinalizedScriptWitnessToInput(scriptSig, wit, 0)
+      tx = psbt.extractTransaction
+
+      _ <- lnd.publishTransaction(tx)
+      _ <- bitcoind.sendRawTransaction(tx)
+    } yield succeed
   }
 
   it must "pay an invoice" in { param =>
