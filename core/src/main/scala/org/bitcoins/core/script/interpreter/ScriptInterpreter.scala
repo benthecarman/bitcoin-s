@@ -803,7 +803,17 @@ sealed abstract class ScriptInterpreter {
     val sigVersion = program.txSignatureComponent.sigVersion
     val isTaprootSigVersion =
       sigVersion == SigVersionTapscript || sigVersion == SigVersionTaprootKeySpend
-    if (opCount > MAX_SCRIPT_OPS && !isTaprootSigVersion) {
+
+    val maxScriptOps = if (isTaprootSigVersion) {
+      50 + program.txSignatureComponent
+        .asInstanceOf[TaprootTxSigComponent]
+        .witness
+        .byteSize
+    } else {
+      MAX_SCRIPT_OPS
+    }
+
+    if (opCount > maxScriptOps) {
       completeProgramExecution(program.failExecution(ScriptErrorOpCount))
     } else if (scriptByteVector.length > 10000 && !isTaprootSigVersion) {
       completeProgramExecution(program.failExecution(ScriptErrorScriptSize))
