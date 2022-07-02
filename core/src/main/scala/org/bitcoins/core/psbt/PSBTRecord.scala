@@ -598,8 +598,8 @@ object OutputPSBTRecord extends Factory[OutputPSBTRecord] {
 
   case class TaprootTree(
       leafs: Vector[
-        (Byte, Byte, ByteVector)
-      ] // todo change to TapScriptPubKey when we have a TapScriptPubKey type
+        (Byte, Byte, RawScriptPubKey)
+      ]
   ) extends OutputPSBTRecord {
     require(leafs.nonEmpty)
     override type KeyId = TaprootTreeKeyId.type
@@ -611,7 +611,7 @@ object OutputPSBTRecord extends Factory[OutputPSBTRecord] {
       leafs.foldLeft(ByteVector.empty) { (acc, leaf) =>
         val spk = leaf._3
         acc ++ ByteVector.fromByte(leaf._1) ++ ByteVector.fromByte(
-          leaf._2) ++ CompactSizeUInt.calc(spk).bytes ++ spk
+          leaf._2) ++ CompactSizeUInt.calc(spk.asmBytes).bytes ++ spk.asmBytes
       }
     }
   }
@@ -684,17 +684,18 @@ object OutputPSBTRecord extends Factory[OutputPSBTRecord] {
         @tailrec
         def loop(
             bytes: ByteVector,
-            accum: Vector[(Byte, Byte, ByteVector)]): Vector[
-          (Byte, Byte, ByteVector)] = {
+            accum: Vector[(Byte, Byte, RawScriptPubKey)]): Vector[
+          (Byte, Byte, RawScriptPubKey)] = {
           if (bytes.isEmpty) {
             accum
           } else {
             val depth = bytes.head
             val version = bytes.tail.head
             val spkLen = CompactSizeUInt.fromBytes(bytes.drop(2))
-            val spk = bytes.drop(spkLen.byteSize + 2)
+            val spk =
+              RawScriptPubKey.fromAsmBytes(bytes.drop(spkLen.byteSize + 2))
 
-            val remaining = bytes.drop(2 + spkLen.byteSize + spk.length)
+            val remaining = bytes.drop(2 + spkLen.byteSize + spk.byteSize)
             loop(remaining, accum :+ (depth, version, spk))
           }
         }
