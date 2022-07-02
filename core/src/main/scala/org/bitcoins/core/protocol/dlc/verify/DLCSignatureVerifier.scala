@@ -165,7 +165,6 @@ object DLCSignatureVerifier {
         if (ret) {
           if (psbt.transaction.inputs(idx).previousOutput != outPoint) {
             // TODO: Replace with error log
-            println("Adding signature for incorrect input")
 
             false
           } else {

@@ -637,7 +637,6 @@ sealed abstract class ScriptInterpreter {
       } else {
         taprootWitness match {
           case keypath: TaprootKeyPath =>
-            println(s"keypath")
             val program = checkSchnorrSignature(
               keypath,
               taprootSPK.pubKey.schnorrPublicKey,
@@ -648,7 +647,6 @@ sealed abstract class ScriptInterpreter {
               wTxSigComponent.isInstanceOf[TaprootTxSigComponent],
               s"Must have taproot tx sig component to execute tapscript, got=${wTxSigComponent.getClass.getSimpleName}"
             )
-            println(s"taprootScriptPath")
             val taprootTxSigComponent =
               wTxSigComponent.asInstanceOf[TaprootTxSigComponent]
             val controlBlock = taprootScriptPath.controlBlock
@@ -1205,7 +1203,6 @@ sealed abstract class ScriptInterpreter {
           (programOrError, newOpCount)
 
         case OP_CHECKSIG :: _ =>
-          println(s"program.opCodeSeparator=${program.lastCodeSeparator}")
           val programOrError = CryptoInterpreter.opCheckSig(program)
           val newOpCount =
             calcOpCount(opCount, OP_CHECKSIG)

@@ -242,7 +242,12 @@ case class TaprootKeyPath(
     hashType: HashType,
     annexOpt: Option[ByteVector])
     extends TaprootWitness {
-  override val stack: Vector[ByteVector] = Vector(signature.bytes)
+
+  override val stack: Vector[ByteVector] = {
+    if (hashType == HashType.sigHashDefault) {
+      Vector(signature.bytes)
+    } else Vector(signature.bytes :+ hashType.byte)
+  }
 }
 
 object TaprootKeyPath {
@@ -394,7 +399,6 @@ object TaprootScriptPath {
     val merkleRoot = computeTaprootMerkleRoot(controlBlock, tapLeafHash)
 
     val parity = (controlBlock.bytes.head & 1) == 1
-    println(s"parity=$parity")
     program.pubKey.checkTapTweak(internal = internalPubKey,
                                  merkleRootOpt = Some(merkleRoot),
                                  parity = parity)
