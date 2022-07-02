@@ -583,6 +583,7 @@ sealed abstract class ScriptInterpreter {
               altStack = Nil,
               flags = wTxSigComponent.flags,
               lastCodeSeparator = None,
+              codeSeparatorTapscriptIdx = None,
               error = Some(err)
             )
             Success(program)
