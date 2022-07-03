@@ -704,6 +704,7 @@ trait BitcoinScriptUtil {
       tx: Transaction,
       inputMap: InputPSBTMap,
       index: Int,
+      outputMap: Map[TransactionOutPoint, TransactionOutput],
       flags: Seq[ScriptFlag] = Policy.standardFlags): Try[Transaction] = {
 
     val txIn = tx.inputs(index)
@@ -715,7 +716,7 @@ trait BitcoinScriptUtil {
                                          conditionalPath = condPath,
                                          preImages = preImages)
 
-    val txSigComponent = TxSigComponent(inputInfo, tx, flags)
+    val txSigComponent = TxSigComponent(inputInfo, tx, outputMap, flags)
 
     val inputResult =
       ScriptInterpreter.run(PreExecutionScriptProgram(txSigComponent))
