@@ -684,7 +684,7 @@ case class PSBT(
     PSBT(globalMap, newInputMaps, outputMaps)
   }
 
-  protected def getPrevOutputMap(): PreviousOutputMap = {
+  def getPrevOutputMap(): PreviousOutputMap = {
     val map = transaction.inputs
       .zip(inputMaps)
       .map { case (input, inputMap) =>
