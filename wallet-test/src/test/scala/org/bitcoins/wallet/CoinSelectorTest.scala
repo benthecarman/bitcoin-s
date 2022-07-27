@@ -99,11 +99,13 @@ class CoinSelectorTest extends BitcoinSWalletTest {
 
   it must "select the least wasteful outputs" in { fixture =>
     val selection =
-      CoinSelector.selectByLeastWaste(walletUtxos = fixture.utxoSet,
-                                      outputs = Vector(fixture.output),
-                                      feeRate = fixture.feeRate,
-                                      longTermFeeRate =
-                                        SatoshisPerByte.fromLong(10))
+      CoinSelector.selectByLeastWaste(
+        walletUtxos = fixture.utxoSet,
+        outputs = Vector(fixture.output),
+        feeRate = fixture.feeRate,
+        changeCost = Satoshis.one,
+        longTermFeeRate = SatoshisPerByte.fromLong(10)
+      )
 
     // Need to sort as ordering will be different sometimes
     val sortedSelection = selection.sortBy(_.outPoint.hex)

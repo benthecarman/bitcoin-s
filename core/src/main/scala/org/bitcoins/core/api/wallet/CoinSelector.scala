@@ -12,6 +12,123 @@ import scala.util.{Random, Try}
 /** Implements algorithms for selecting from a UTXO set to spend to an output set at a given fee rate. */
 trait CoinSelector {
 
+  private val BNB_MAX_TRIES = 100000
+
+  /** Selects coins using the branch and bound algorithm.
+    * @see https://github.com/bitcoin/bitcoin/blob/7f79746bf046d0028bb68f265804b9774dec2acb/src/wallet/coinselection.cpp#L65
+    */
+  def selectCoinsBnB(
+      walletUtxos: Vector[CoinSelectorUtxo],
+      outputs: Vector[TransactionOutput],
+      changeCost: CurrencyUnit,
+      feeRate: FeeUnit,
+      longTermFeeRate: FeeUnit): Vector[CoinSelectorUtxo] = {
+    // target is the total of the outputs we are trying to spend
+    // plus the 10 overhead bytes of the transaction and size of the outputs
+    val nonInputFees = feeRate * (outputs.map(_.byteSize).sum + 10)
+    val target =
+      outputs.foldLeft(CurrencyUnits.zero)(_ + _.value) + nonInputFees
+
+    // Filter dust coins
+    val usableUtxos =
+      walletUtxos.filter(_.effectiveValue(feeRate) > CurrencyUnits.zero)
+
+    val startingValue =
+      usableUtxos.foldLeft(CurrencyUnits.zero)(_ + _.effectiveValue(feeRate))
+
+    if (startingValue < target) {
+      throw new RuntimeException(
+        s"Not enough value in given outputs to make transaction spending $target")
+    }
+
+    val sorted = usableUtxos.sortBy(_.value)(Ordering[CurrencyUnit].reverse)
+
+    @tailrec
+    def loop(
+        currentValue: CurrencyUnit,
+        currentAvailValue: CurrencyUnit,
+        currentWaste: CurrencyUnit,
+        bestWaste: CurrencyUnit,
+        currentSelection: Vector[CoinSelectorUtxo],
+        bestSelection: Vector[CoinSelectorUtxo],
+        tries: Int): Vector[CoinSelectorUtxo] = {
+      if (tries > BNB_MAX_TRIES) {
+        throw new RuntimeException(
+          s"Failed to find a solution after $BNB_MAX_TRIES tries")
+      }
+
+      val (backtrack, newBestWaste, newBestSelection) = {
+        if (
+          currentValue + currentAvailValue < target || // Cannot possibly reach target with the amount remaining in the currentAvailValue.
+          currentValue > target + changeCost || // Selected value is out of range, go back and try other branch
+          (currentWaste > bestWaste && (sorted.head.fee(feeRate) - sorted.head
+            .fee(longTermFeeRate)) > Satoshis.zero)
+        ) { // Don't select things which we know will be more wasteful if the waste is increasing
+          (true, bestWaste, bestSelection)
+        } else if (currentValue >= target) { // Selected value is within range
+          // This is the excess value which is added to the waste for the below comparison
+          // Adding another UTXO after this check could bring the waste down if the long term fee is higher than the current fee.
+          // However we are not going to explore that because this optimization for the waste is only done when we have hit our target
+          // value. Adding any more UTXOs will be just burning the UTXO; it will go entirely to fees. Thus we aren't going to
+          // explore any more UTXOs to avoid burning money like that.
+          if (currentWaste + (currentValue - target) <= bestWaste) {
+            (true, currentWaste, currentSelection)
+          } else (true, bestWaste, bestSelection)
+        } else (false, bestWaste, bestSelection)
+      }
+
+      if (backtrack && currentSelection.isEmpty) {
+        bestSelection // We have walked back to the first utxo and no branch is untraversed. All solutions searched
+      } else if (backtrack && currentSelection.nonEmpty) {} else { // Moving forwards, continuing down this branch
+        val utxo = sorted(currentSelection.size)
+        val effectiveValue = utxo.effectiveValue(feeRate)
+
+        // Remove this utxo from the currentAvailValue utxo amount
+        val newAvailValue = currentAvailValue - effectiveValue
+
+        // Avoid searching a branch if the previous UTXO has the same value and same waste and was excluded. Since the ratio of fee to
+        // long term fee is the same, we only need to check if one of those values match in order to know that the waste is the same.
+        // todo missing !curr_selection.back()
+        if (
+          currentSelection.nonEmpty &&
+          (effectiveValue == sorted(currentSelection.size - 1).effectiveValue(
+            feeRate)) &&
+          (utxo.fee(feeRate) == sorted(currentSelection.size - 1).fee(feeRate))
+        ) {
+          loop(
+            currentValue = currentValue,
+            currentAvailValue = newAvailValue,
+            currentWaste = currentWaste,
+            bestWaste = newBestWaste,
+            currentSelection = currentSelection,
+            bestSelection = newBestSelection,
+            tries = tries + 1
+          )
+        } else { // Inclusion branch first (Largest First Exploration)
+          loop(
+            currentValue = currentValue + effectiveValue,
+            currentAvailValue = newAvailValue,
+            currentWaste = utxo.fee(feeRate) - utxo.fee(longTermFeeRate),
+            bestWaste = newBestWaste,
+            currentSelection = currentSelection :+ utxo,
+            bestSelection = newBestSelection,
+            tries = tries + 1
+          )
+        }
+      }
+    }
+
+    loop(
+      currentValue = Satoshis.zero,
+      currentAvailValue = startingValue,
+      currentWaste = CurrencyUnits.zero,
+      bestWaste = Satoshis.max,
+      currentSelection = Vector.empty,
+      bestSelection = Vector.empty,
+      tries = 0
+    )
+  }
+
   /** Randomly selects utxos until it has enough to fund the desired amount,
     * should only be used for research purposes
     */
@@ -136,6 +253,7 @@ object CoinSelector extends CoinSelector {
       walletUtxos: Vector[CoinSelectorUtxo],
       outputs: Vector[TransactionOutput],
       feeRate: FeeUnit,
+      changeCostOpt: Option[CurrencyUnit] = None,
       longTermFeeRateOpt: Option[FeeUnit] = None): Vector[CoinSelectorUtxo] =
     coinSelectionAlgo match {
       case RandomSelection =>
@@ -146,11 +264,27 @@ object CoinSelector extends CoinSelector {
         accumulateSmallestViable(walletUtxos, outputs, feeRate)
       case StandardAccumulate =>
         accumulate(walletUtxos, outputs, feeRate)
+      case BranchAndBound =>
+        (longTermFeeRateOpt, changeCostOpt) match {
+          case (Some(longTermFeeRate), Some(changeCost)) =>
+            selectCoinsBnB(walletUtxos,
+                           outputs,
+                           changeCost,
+                           feeRate,
+                           longTermFeeRate)
+          case (None, None) | (Some(_), None) | (None, Some(_)) =>
+            throw new IllegalArgumentException(
+              "longTermFeeRateOpt must be defined for LeastWaste")
+        }
       case LeastWaste =>
-        longTermFeeRateOpt match {
-          case Some(longTermFeeRate) =>
-            selectByLeastWaste(walletUtxos, outputs, feeRate, longTermFeeRate)
-          case None =>
+        (longTermFeeRateOpt, changeCostOpt) match {
+          case (Some(longTermFeeRate), Some(changeCost)) =>
+            selectByLeastWaste(walletUtxos,
+                               outputs,
+                               feeRate,
+                               changeCost,
+                               longTermFeeRate)
+          case (None, None) | (Some(_), None) | (None, Some(_)) =>
             throw new IllegalArgumentException(
               "longTermFeeRateOpt must be defined for LeastWaste")
         }
@@ -192,6 +326,7 @@ object CoinSelector extends CoinSelector {
       walletUtxos: Vector[CoinSelectorUtxo],
       outputs: Vector[TransactionOutput],
       feeRate: FeeUnit,
+      changeCost: CurrencyUnit,
       longTermFeeRate: FeeUnit
   ): Vector[CoinSelectorUtxo] = {
     val target = outputs.map(_.value).sum
@@ -203,14 +338,11 @@ object CoinSelector extends CoinSelector {
                        walletUtxos,
                        outputs,
                        feeRate,
+                       Some(changeCost),
                        Some(longTermFeeRate))
 
-        // todo for now just use 1 sat, when we have more complex selection algos
-        // that just don't result in change (Branch and Bound), this will need to be calculated
-        val changeCostOpt = Some(Satoshis.one)
-
         val waste = calculateSelectionWaste(selection,
-                                            changeCostOpt,
+                                            Some(changeCost),
                                             target,
                                             feeRate,
                                             longTermFeeRate)
