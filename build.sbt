@@ -138,6 +138,12 @@ lazy val lndRpc = project
   .settings(CommonSettings.prodSettings: _*)
   .dependsOn(asyncUtilsJVM, appCommons)
 
+lazy val clnRpc = project
+  .in(file("cln-rpc"))
+  .settings(CommonSettings.prodSettings: _*)
+  .settings(name := "bitcoin-s-cln-rpc")
+  .dependsOn(asyncUtilsJVM, appCommons)
+
 lazy val clightningRpc = project
   .in(file("clightning-rpc"))
   .settings(CommonSettings.prodSettings: _*)
@@ -238,7 +244,9 @@ lazy val `bitcoin-s` = project
     torTest,
     scripts,
     clightningRpc,
-    clightningRpcTest
+    clightningRpcTest,
+    clnRpc,
+    clnRpcTest
   )
   .dependsOn(
     secp256k1jni,
@@ -297,7 +305,9 @@ lazy val `bitcoin-s` = project
     torTest,
     scripts,
     clightningRpc,
-    clightningRpcTest
+    clightningRpcTest,
+    clnRpc,
+    clnRpcTest
   )
   .settings(CommonSettings.settings: _*)
   // unidoc aggregates Scaladocs for all subprojects into one big doc
@@ -388,15 +398,19 @@ lazy val oracleServer = project
   .settings(jlinkModules ++= CommonSettings.jlinkModules)
   .settings(jlinkModules --= CommonSettings.rmJlinkModules)
   .settings(jlinkOptions ++= CommonSettings.jlinkOptions)
-  .settings(jlinkIgnoreMissingDependency := CommonSettings.oracleServerJlinkIgnore)
-  .settings(bashScriptExtraDefines ++= IO.readLines(baseDirectory.value / "src" / "universal" / "oracle-server-extra-startup-script.sh"))
+  .settings(
+    jlinkIgnoreMissingDependency := CommonSettings.oracleServerJlinkIgnore)
+  .settings(bashScriptExtraDefines ++= IO.readLines(
+    baseDirectory.value / "src" / "universal" / "oracle-server-extra-startup-script.sh"))
   .dependsOn(
     dlcOracle,
     serverRoutes
   )
-  .enablePlugins(JavaAppPackaging, DockerPlugin, JlinkPlugin, 
-    //needed for windows, else we have the 'The input line is too long` on windows OS
-    LauncherJarPlugin)
+  .enablePlugins(JavaAppPackaging,
+                 DockerPlugin,
+                 JlinkPlugin,
+                 //needed for windows, else we have the 'The input line is too long` on windows OS
+                 LauncherJarPlugin)
 
 lazy val oracleServerTest = project
   .in(file("app/oracle-server-test"))
@@ -423,7 +437,8 @@ lazy val appServer = project
   .settings(jlinkModules --= CommonSettings.rmJlinkModules)
   .settings(jlinkOptions ++= CommonSettings.jlinkOptions)
   .settings(jlinkIgnoreMissingDependency := CommonSettings.appServerJlinkIgnore)
-  .settings(bashScriptExtraDefines ++= IO.readLines(baseDirectory.value / "src" / "universal" / "wallet-server-extra-startup-script.sh"))
+  .settings(bashScriptExtraDefines ++= IO.readLines(
+    baseDirectory.value / "src" / "universal" / "wallet-server-extra-startup-script.sh"))
   .dependsOn(
     serverRoutes,
     appCommons,
@@ -436,9 +451,11 @@ lazy val appServer = project
     feeProvider,
     zmq
   )
-  .enablePlugins(JavaAppPackaging, DockerPlugin, JlinkPlugin,
-    //needed for windows, else we have the 'The input line is too long` on windows OS
-    LauncherJarPlugin)
+  .enablePlugins(JavaAppPackaging,
+                 DockerPlugin,
+                 JlinkPlugin,
+                 //needed for windows, else we have the 'The input line is too long` on windows OS
+                 LauncherJarPlugin)
 
 lazy val appServerTest = project
   .in(file("app/server-test"))
@@ -459,10 +476,12 @@ lazy val cli = project
   .settings(jlinkOptions ++= CommonSettings.jlinkOptions)
   .settings(jlinkModules --= CommonSettings.rmCliJlinkModules)
   .settings(jlinkIgnoreMissingDependency := CommonSettings.cliJlinkIgnore)
-  .settings(bashScriptExtraDefines ++= IO.readLines(baseDirectory.value / "src" / "universal" / "cli-extra-startup-script.sh"))
+  .settings(bashScriptExtraDefines ++= IO.readLines(
+    baseDirectory.value / "src" / "universal" / "cli-extra-startup-script.sh"))
   .dependsOn(
     appCommons
-  ).enablePlugins(JavaAppPackaging, NativeImagePlugin, JlinkPlugin)
+  )
+  .enablePlugins(JavaAppPackaging, NativeImagePlugin, JlinkPlugin)
 
 lazy val cliTest = project
   .in(file("app/cli-test"))
@@ -614,6 +633,15 @@ lazy val clightningRpcTest = project
   )
   .dependsOn(coreJVM % testAndCompile, clightningRpc, testkit)
 
+lazy val clnRpcTest = project
+  .in(file("cln-rpc-test"))
+  .settings(CommonSettings.testSettings: _*)
+  .settings(
+    libraryDependencies ++= Deps.eclairRpcTest.value,
+    name := "bitcoin-s-cln-rpc-test"
+  )
+  .dependsOn(coreJVM % testAndCompile, clnRpc, testkit)
+
 lazy val lndRpcTest = project
   .in(file("lnd-rpc-test"))
   .settings(CommonSettings.testSettings: _*)
@@ -679,6 +707,7 @@ lazy val testkit = project
     eclairRpc,
     lndRpc,
     clightningRpc,
+    clnRpc,
     node,
     wallet,
     dlcWallet,

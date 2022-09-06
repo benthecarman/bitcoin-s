@@ -7,5 +7,6 @@ object Projects {
   val bitcoindRpc = project in file("..") / "bitcoind-rpc"
   val lndRpc = project in file("..") / "lnd-rpc"
   val clightningRpc = project in file("..") / "clightning-rpc"
+  val clnRpc = project in file("..") / "cln-rpc"
   val secp256k1jni = project in file("..") / "secp256k1jni "
 }
